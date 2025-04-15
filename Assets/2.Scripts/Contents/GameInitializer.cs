@@ -111,6 +111,17 @@ public class GameInitializer : NetworkBehaviour
             pCallback.Invoke();
     }
 
+    //private void SetPlayer()
+    //{
+    //    // 바람 설정
+    //    RandomWindForce();
+
+    //    // 다음 플레이어 턴 시작
+    //    _camController.PlayerFocusing(CurTurnPlayer);
+    //    CurTurnPlayer.IsMyTurn();
+    //    CurTurnPlayer.FillFuel();       // 연료 회복
+    //}
+
     private void FindCurrentTurnPlayer(int turnIndex)
     {
         ulong clientId = NetworkManager.LocalClientId;
@@ -119,8 +130,9 @@ public class GameInitializer : NetworkBehaviour
         {
             PlayerController player = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject.GetComponent<PlayerController>();
             player.IsMyTurn();
-            CurTurnPlayer = player;
 
+            CurTurnPlayer = player;
+            CurTurnPlayer.FillFuel();       // 연료 회복
             // 플레이어 카메라 포커싱
             PlayerCameraFocusing(CurTurnPlayer);
             Debug.Log($"Your turn.");

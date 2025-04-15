@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
 {
+    private const float FULL_FUEL = 100f;
+    private const float FUEL_USE_SPEED = 25f;
     private const float DEAD_HEIGHT = -20f;  //  죽는 높이
     private const float GRAVITY_SCALE_GROUND = 10f;
     private const float GRAVITY_SCALE_AERIAL = 1f;
@@ -14,6 +16,7 @@ public class PlayerController : NetworkBehaviour
     [Header("Body")]
     [SerializeField] private float _moveAngleThreshold = 70f;
     [SerializeField] private float _speed = 4f;
+    [SerializeField] private float _curFuel = 0f;
 
     [Header("Artillery")]
     [SerializeField] private Transform _artilleryTrans;
@@ -207,11 +210,14 @@ public class PlayerController : NetworkBehaviour
             _dirX = Input.GetAxis("Horizontal");
 
             // 포 각도 조절중에는 움직일 수 없음
-            if (_dirY == 0)
+            if (_dirY == 0 && _curFuel > 0f)
                transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
 
             if (_dirX != 0f)
             {
+                // 연료 사용
+                UseFuel();
+
                 // 좌우 반전
                 Flip(_dirX);
 
@@ -336,7 +342,27 @@ public class PlayerController : NetworkBehaviour
         newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(dirX); // 좌우 반전
         transform.localScale = newScale;
     }
-    
+
+    // 연료 사용하는 메소드
+    private void UseFuel()
+    {
+        if (_curFuel > 0f)
+        {
+            _curFuel -= Time.deltaTime * FUEL_USE_SPEED;
+        }
+        else
+        {
+            _curFuel = 0f;
+        }
+    }
+
+    // 연료 채우는 메소드
+    public void FillFuel()
+    {
+        _curFuel = FULL_FUEL; ;
+    }
+
+
     public void IsMyTurn()
     {
         _isMyTurn = true;
