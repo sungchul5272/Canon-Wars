@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public enum eShellExplosionType
@@ -5,7 +6,7 @@ public enum eShellExplosionType
     Circle,
     Ellipse,
 }
-public class Shell : MonoBehaviour
+public class Shell : NetworkBehaviour
 {
     [Header("Camera Shake")]
     [SerializeField] private float _shakeDurtaion = 0.5f;
@@ -28,6 +29,12 @@ public class Shell : MonoBehaviour
     private float _power = 1f;
     private float _curWindForce = 0f;
     private bool _isFire = false;
+
+    private void Awake()
+    {
+        _collider2D = GetComponent<BoxCollider2D>();
+        _rb2D = GetComponent<Rigidbody2D>();
+    }
 
     public void Init()
     {
@@ -60,7 +67,12 @@ public class Shell : MonoBehaviour
 
     public void Update()
     {
-          CheckExplosion();
+        CheckExplosion();
+
+        if (!IsServer)
+        {
+            return;
+        }
 
         // 지속시간이 끝나면 없애기
         if (Time.time >= _endTime)

@@ -5818,7 +5818,7 @@ MonoBehaviour:
   sortLobbyUI: {fileID: 366327463}
   mainLobbyUI: {fileID: 1444641434}
   loadingUI: {fileID: 391795019}
-  gameSceneName: 3.IngameScene
+  gameSceneName: MapTest
 --- !u!1 &678201844
 GameObject:
   m_ObjectHideFlags: 0

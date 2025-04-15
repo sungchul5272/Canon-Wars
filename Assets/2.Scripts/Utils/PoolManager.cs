@@ -34,6 +34,12 @@ public class Pool
 
     public GameObject Pop()
     {
+        if (_pool.Get() == null)
+        {
+            GameObject go = GameObject.Instantiate(_prefab);
+            PoolManager.Instance.Push(go);
+        }
+
         return _pool.Get();
     }
 
@@ -46,7 +52,7 @@ public class Pool
     {
         GameObject go = GameObject.Instantiate(_prefab);
 
-        go.transform.parent = Root;
+        //go.transform.parent = Root;
         go.name = _prefab.name;
 
         return go;

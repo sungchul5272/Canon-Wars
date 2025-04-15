@@ -32,6 +32,8 @@ public class CreateLobbyUI : MonoBehaviour
 
     void OnEnable()
     {
+        createButton.interactable = false;
+
         // 뒤로가기
         backButton.onClick.RemoveAllListeners();
         backButton.onClick.AddListener(() =>

@@ -11,19 +11,20 @@ public class MapSpawner : MonoBehaviour
     private Ground _selectedGround = null;
     private int _seletedMapIndex = 0;
 
-    public void SpawnSelectMap(eMapType eSelectMap)
+    public void SpawnSelectMap(int randomIndex) //eMapType eSelectMap)
     {
         _curMap = null;
 
-        if (eSelectMap == eMapType.Random)
-        {
-            // 랜덤으로 맵을 선택한 경우
-            _seletedMapIndex = Random.Range((int)eMapType.Valley, (int)eMapType.Max);
-        }
-        else
-        {
-            _seletedMapIndex = (int)eSelectMap;
-        }
+        _seletedMapIndex = randomIndex;
+        //if (eSelectMap == eMapType.Random)
+        //{
+        //    // 랜덤으로 맵을 선택한 경우
+        //    _seletedMapIndex = Random.Range((int)eMapType.Valley, (int)eMapType.Max);
+        //}
+        //else
+        //{
+        //    _seletedMapIndex = (int)eSelectMap;
+        //}
 
         // 맵 데이터를 통해서 생성
         _curMap = _mapDataList[_seletedMapIndex];

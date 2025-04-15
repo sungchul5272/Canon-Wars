@@ -55,7 +55,6 @@ public class LobbyManager : MonoBehaviour
     string _lobbyNotFoundError = "lobby not found";
     float _maintainLobbyTime = 20;
     float _checkLobbyTime = 1.1f;
-    int _maxPlayers = 4;
 
     void Awake()
     {
@@ -133,7 +132,7 @@ public class LobbyManager : MonoBehaviour
         {
             // 肺厚 积己
             loadingUI.SetActive(true);
-            _joinedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, _maxPlayers, new CreateLobbyOptions
+            _joinedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, NetworkPlayerData.SetMaxPlayer(gameMode), new CreateLobbyOptions
             {
                 IsPrivate = isPrivate,
                 Player = GetPlayer(true),
@@ -225,6 +224,7 @@ public class LobbyManager : MonoBehaviour
                 });
             }
 
+            NetworkPlayerData.SetMaxPlayer((EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value));
             PublicLobbyDatas.Clear();
             mainLobbyUI.EnterMainLobbyUI(_joinedLobby.Name, _joinedLobby.LobbyCode);
             InvokeRepeating(nameof(RefreshPlayers), _checkLobbyTime, _checkLobbyTime);
@@ -466,7 +466,7 @@ public class LobbyManager : MonoBehaviour
         // 副饭捞 积己
         try
         {
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(_maxPlayers - 1);
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(NetworkPlayerData.GetMaxPlayer() - 1);
             string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             RelayServerData relayServerData = new(allocation, "dtls");
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);

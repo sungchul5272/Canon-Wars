@@ -3,8 +3,9 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
-public class GameInitializer : MonoBehaviour
+public class GameInitializer : NetworkBehaviour
 {
     #region 임시 싱글턴
     public static GameInitializer Instance;
@@ -21,7 +22,7 @@ public class GameInitializer : MonoBehaviour
     [SerializeField] private MapSpawner _mapSpawner;
     [SerializeField] private List<GameObject> _tankPrefabList;
     [SerializeField] private eMapType _selectedMapType = eMapType.Random;
-    [SerializeField] private int _playerCount = 0;
+    //[SerializeField] private int _playerCount = 0;
 
     [Header("Environment")]
     [Range(0f,10f)]
@@ -31,12 +32,16 @@ public class GameInitializer : MonoBehaviour
     private CameraController _camController = null;
     private List<PlayerController> _playerList = new List<PlayerController>();
 
-    private int _curTurnPlayerIndex = 0;
-    public PlayerController CurTurnPlayer { get => _playerList[_curTurnPlayerIndex]; }
+    //private int _curTurnPlayerIndex = 0;
+    //public PlayerController CurTurnPlayer { get => _playerList[_curTurnPlayerIndex]; }
     public Transform CurShellTrans { get; set; }
 
     private bool _isTurnWait = false;
-    
+
+    public PlayerController CurTurnPlayer { get; set; }
+    private List<Vector3> _spawnPosList = new();
+    private NetworkVariable<int> _netMapIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -44,19 +49,45 @@ public class GameInitializer : MonoBehaviour
         Init();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        _netMapIndex.OnValueChanged += (previousValue, newValue) =>
+        {
+            Debug.Log($"Map index is {newValue}.");
+        };
+
+        _netTurnIndex.OnValueChanged += (previousValue, newValue) =>
+        {
+            FindCurrentTurnPlayer(newValue);
+        };
+    }
+
     public void Init(Action pCallback = null)
     {
         // 선택한 맵 생성
-        _mapSpawner.SpawnSelectMap(_selectedMapType);
+        SpawnMap();
 
-        if (_playerCount == 0)
+        // 플레이어 소환
+        SpawnPlayers();
+
+        // 호스트일 경우
+        if (IsServer)
         {
-            Debug.Log("No Player");
-            return;
+            // 무작위 턴 순서 지정
+            _netTurnIndex.Value = UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
         }
 
-        // 캐릭터 랜덤 스폰 좌표 배치
-        PlayerRandomPosSpawn();
+        //// 선택한 맵 생성
+        //_mapSpawner.SpawnSelectMap(_selectedMapType);
+
+        //if (_playerCount == 0)
+        //{
+        //    Debug.Log("No Player");
+        //    return;
+        //}
+
+        //// 캐릭터 랜덤 스폰 좌표 배치
+        //PlayerRandomPosSpawn();
 
         // 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
@@ -64,14 +95,14 @@ public class GameInitializer : MonoBehaviour
         if (_camController != null)
             _camController.Init();
 
-        // 랜덤 순서로 턴 시작
-        _curTurnPlayerIndex = UnityEngine.Random.Range(0, _playerCount);
+        //// 랜덤 순서로 턴 시작
+        //_curTurnPlayerIndex = UnityEngine.Random.Range(0, _playerCount);
 
-        Debug.Log($"First Turn Player : {CurTurnPlayer.name}");
+        //Debug.Log($"First Turn Player : {CurTurnPlayer.name}");
 
-        // 플레이어 카메라 포커싱
-        PlayerCameraFocusing(CurTurnPlayer);
-        CurTurnPlayer.IsMyTurn();
+        //// 플레이어 카메라 포커싱
+        //PlayerCameraFocusing(CurTurnPlayer);
+        //CurTurnPlayer.IsMyTurn();
 
         // 바람 설정
         RandomWindForce();
@@ -80,44 +111,133 @@ public class GameInitializer : MonoBehaviour
             pCallback.Invoke();
     }
 
-    // 스폰 좌표 목록중에 랜덤으로 선택해서 플레이어 캐릭터 배치하는 메소드
-    private void PlayerRandomPosSpawn()
+    private void FindCurrentTurnPlayer(int turnIndex)
     {
-        List<Vector3> posList = _mapSpawner.GetSpawnPosPList();
-        int randPosIndex = 0;
-        int addSortOrder = 2;
-        int sortOrderValue = 0;
-
-        // 플레이어의 수만큼 랜덤 좌표에 생성
-        for (int i = 0; i < _playerCount; i++)
+        ulong clientId = NetworkManager.LocalClientId;
+        Debug.Log($"Turn index is {turnIndex}. Your turn is {clientId}.");
+        if ((ulong)turnIndex == clientId)
         {
-            randPosIndex = UnityEngine.Random.Range(0, posList.Count);
+            PlayerController player = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject.GetComponent<PlayerController>();
+            player.IsMyTurn();
+            CurTurnPlayer = player;
 
-            // 임시로 0번째 프리팹 생성
-            Vector2 randPos = (Vector2)posList[randPosIndex];
-            GameObject go = Instantiate(_tankPrefabList[0], randPos, Quaternion.identity);
-            go.name = $"Player {i}";
-
-            // 플레이어 초기화
-            PlayerController player = go.GetComponent<PlayerController>();
-            player.Init();
-            player.ChangeSpriteOrder(sortOrderValue);
-
-            // x좌표가 0보다 큰 경우 우측을 바라보도록
-            if (player.transform.position.x > 0)
-            {
-                player.Flip(-1);
-            }
-
-            _playerList.Add(player);
-
-            // 뽑힌 자리는 랜덤 좌표 목록에서 제거
-            posList.RemoveAt(randPosIndex);
-
-            // Sort Order값 증가
-            sortOrderValue += addSortOrder;
+            // 플레이어 카메라 포커싱
+            PlayerCameraFocusing(CurTurnPlayer);
+            Debug.Log($"Your turn.");
+        }
+        else
+        {
+            Debug.Log($"Player {turnIndex}'s turn.");
         }
     }
+
+    // 맵 생성
+    private void SpawnMap()
+    {
+        // 호스트일 경우
+        if (IsServer)
+        {
+            // 무작위 맵 지정
+            _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
+        }
+
+        _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+    }
+
+    // 플레이어 생성
+    private void SpawnPlayers()
+    {
+        // 스폰 위치 초기화
+        if (IsServer)
+        {
+            _spawnPosList = _mapSpawner.GetSpawnPosPList();
+        }
+
+        NetworkManager singleton = NetworkManager.Singleton;
+        if (IsServer)
+        {
+            //호스트 플레이어 소환
+            SpawnPlayer(singleton.ConnectedClientsIds[0]);
+
+            // 접속한 클라이언트 플레이어 소환
+            NetworkManager.Singleton.OnClientConnectedCallback += (clientId) =>
+            {
+                SpawnPlayer(clientId);
+                CurrentTurnPlayerClientRpc(_netTurnIndex.Value);
+            };
+        }
+    }
+
+    // 플레이어 소환
+    private void SpawnPlayer(ulong clientIndex)
+    {
+        // 랜덤 좌표 저장
+        int randomIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
+        Vector3 spawnPos = _spawnPosList[randomIndex];
+        Debug.Log($"Spawn position ({_spawnPosList[randomIndex]}) removed.");
+        _spawnPosList.RemoveAt(randomIndex);
+
+        // 임시로 0번째 프리팹 생성
+        GameObject prefab = Instantiate(_tankPrefabList[0], spawnPos, Quaternion.identity);
+        prefab.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientIndex);
+        prefab.name = $"Player {clientIndex}";
+
+        // 플레이어 초기화
+        PlayerController player = prefab.GetComponent<PlayerController>();
+
+        // x좌표가 0보다 큰 경우 우측을 바라보도록
+        if (player.transform.position.x > 0)
+        {
+            player.Flip(-1);
+        }
+
+        Debug.Log($"{player.gameObject.name} spawned at {spawnPos}.");
+    }
+
+    [ClientRpc]
+    private void CurrentTurnPlayerClientRpc(int turnIndex)
+    {
+        FindCurrentTurnPlayer(turnIndex);
+    }
+
+    //// 스폰 좌표 목록중에 랜덤으로 선택해서 플레이어 캐릭터 배치하는 메소드
+    //private void PlayerRandomPosSpawn()
+    //{
+    //    List<Vector3> posList = _mapSpawner.GetSpawnPosPList();
+    //    int randPosIndex = 0;
+    //    int addSortOrder = 2;
+    //    int sortOrderValue = 0;
+
+    //    // 플레이어의 수만큼 랜덤 좌표에 생성
+    //    for (int i = 0; i < _playerCount; i++)
+    //    {
+    //        randPosIndex = UnityEngine.Random.Range(0, posList.Count);
+
+    //        // 임시로 0번째 프리팹 생성
+    //        Vector2 randPos = (Vector2)posList[randPosIndex];
+    //        GameObject go = Instantiate(_tankPrefabList[0], randPos, Quaternion.identity);
+    //        go.name = $"Player {i}";
+
+    //        // 플레이어 초기화
+    //        PlayerController player = go.GetComponent<PlayerController>();
+    //        player.Init();
+    //        player.ChangeSpriteOrder(sortOrderValue);
+
+    //        // x좌표가 0보다 큰 경우 우측을 바라보도록
+    //        if (player.transform.position.x > 0)
+    //        {
+    //            player.Flip(-1);
+    //        }
+
+    //        _playerList.Add(player);
+
+    //        // 뽑힌 자리는 랜덤 좌표 목록에서 제거
+    //        posList.RemoveAt(randPosIndex);
+
+    //        // Sort Order값 증가
+    //        sortOrderValue += addSortOrder;
+    //    }
+    //}
 
     public void PlayerTurnEnd()
     {
@@ -128,9 +248,9 @@ public class GameInitializer : MonoBehaviour
 
     private IEnumerator StartNextPlayerTurn()
     {
-        // 턴 인덱스 증가
-        int nextIndex = (_curTurnPlayerIndex + 1) % _playerCount;
-        _curTurnPlayerIndex = nextIndex;
+        //// 턴 인덱스 증가
+        //int nextIndex = (_curTurnPlayerIndex + 1) % _playerCount;
+        //_curTurnPlayerIndex = nextIndex;
 
         Debug.Log($"Now Turn Player : {CurTurnPlayer.name}");
 
@@ -145,10 +265,17 @@ public class GameInitializer : MonoBehaviour
         RandomWindForce();
 
         // 다음 플레이어 턴 시작
-        _camController.PlayerFocusing(CurTurnPlayer);
-        CurTurnPlayer.IsMyTurn();
+        MoveTurnServerRpc();
+        //_camController.PlayerFocusing(CurTurnPlayer);
+        //CurTurnPlayer.IsMyTurn();
 
         _isTurnWait = false;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void MoveTurnServerRpc()
+    {
+        _netTurnIndex.Value = (_netTurnIndex.Value + 1) % NetworkPlayerData.GetMaxPlayer();
     }
 
     private void RandomWindForce()

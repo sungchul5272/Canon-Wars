@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using TMPro;
+using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
     private const float DEAD_HEIGHT = -20f;  //  죽는 높이
     private const float GRAVITY_SCALE_GROUND = 10f;
@@ -56,10 +57,17 @@ public class PlayerController : MonoBehaviour
     private bool _isMyTurn = false;
     private bool _isCanFire = false;
 
+    private GameObject _curSpawnedShell;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         //Init();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        Init();
     }
 
     public void Init()
@@ -149,21 +157,23 @@ public class PlayerController : MonoBehaviour
         {
             _isFire = true;
             _curGauge = 0f;
-            Shell shell = GenerationShell();
 
-            if (shell == null)
-            {
-                Debug.LogWarning("Generation Shell is Null !!!");
-            }
+            GenerationShellServerRpc();
+            //Shell shell = GenerationShell();
 
-            // 발사
-            shell.Fire(_curShellPower);
+            //if (shell == null)
+            //{
+            //    Debug.LogWarning("Generation Shell is Null !!!");
+            //}
 
-            // 포탄 위치 정보 건네주기
-            GameInitializer.Instance.CurShellTrans = shell.transform;
+            //// 발사
+            //shell.Fire(_curShellPower);
 
-            // 발사한 포탄 저장
-            _curShell = shell.gameObject;
+            //// 포탄 위치 정보 건네주기
+            //GameInitializer.Instance.CurShellTrans = shell.transform;
+
+            //// 발사한 포탄 저장
+            //_curShell = shell.gameObject;
             // 이전 포탄 파워 값 저장
             _prevShellPower = _curShellPower;
 
@@ -223,6 +233,75 @@ public class PlayerController : MonoBehaviour
         if(_isMyTurn == true && _isCanFire == false)
         {
             EndTurn();
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void GenerationShellServerRpc()
+    {
+        if (IsServer)
+        {
+            _curSpawnedShell = PoolManager.Instance.Pop(_curShell);
+            NetworkObject netObj = _curSpawnedShell.GetComponent<NetworkObject>();
+            if (!netObj.IsSpawned)
+            {
+                netObj.Spawn();
+            }
+
+            GameObject go = _curSpawnedShell;
+            if (go == null)
+            {
+                Debug.LogError("Spawned shell is null!");
+            }
+
+            go.transform.position = _shellFireTrans.position;
+            go.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
+
+            // 포탄 방향 
+            Vector3 newScale = _curSpawnedShell.transform.localScale;
+            newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
+            go.transform.localScale = newScale;
+
+            Shell shell = go.GetComponent<Shell>();
+
+            switch (shell.ShellExplosionType)
+            {
+                case eShellExplosionType.Circle:
+                    shell.Init();
+                    break;
+
+                case eShellExplosionType.Ellipse:
+                    ShellEllipse shellEllipse = go.GetComponent<ShellEllipse>();
+                    shellEllipse.Init();
+                    break;
+            }
+
+            // 발사
+            shell.Fire(_curShellPower);
+
+            SendSpawnedObjectClientRpc(netObj.NetworkObjectId);
+        }
+    }
+
+    [ClientRpc]
+    void SendSpawnedObjectClientRpc(ulong networkObjectId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
+        {
+            _curSpawnedShell = netObj.gameObject;
+
+            // 발사
+            Shell shell = _curSpawnedShell.GetComponent<Shell>();
+            //shell.Fire(_curShellPower);
+
+            // 포탄 위치 정보 건네주기
+            GameInitializer.Instance.CurShellTrans = shell.transform;
+
+            // 발사한 포탄 저장
+            if (_isMyTurn)
+            {
+                _curShell = shell.gameObject;
+            }
         }
     }
 
@@ -290,40 +369,40 @@ public class PlayerController : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private Shell GenerationShell()
-    {
-        GameObject go = PoolManager.Instance.Pop(_curShell.gameObject);
+    //private Shell GenerationShell()
+    //{
+    //    GameObject go = PoolManager.Instance.Pop(_curShell.gameObject);
 
-        if (go == null)
-        {
-            go = Instantiate(_curShell, _shellFireTrans.position, Quaternion.identity);
-            PoolManager.Instance.Push(go);
-        }
+    //    if (go == null)
+    //    {
+    //        go = Instantiate(_curShell, _shellFireTrans.position, Quaternion.identity);
+    //        PoolManager.Instance.Push(go);
+    //    }
             
-        go.transform.position = _shellFireTrans.position;
-        go.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
+    //    go.transform.position = _shellFireTrans.position;
+    //    go.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
         
-        // 포탄 방향 
+    //    // 포탄 방향 
 
-        Vector3 newScale = go.transform.localScale;
-        newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
-        go.transform.localScale = newScale;
+    //    Vector3 newScale = go.transform.localScale;
+    //    newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
+    //    go.transform.localScale = newScale;
 
-        Shell shell = go.GetComponent<Shell>();
+    //    Shell shell = go.GetComponent<Shell>();
 
-        switch(shell.ShellExplosionType)
-        {
-            case eShellExplosionType.Circle:
-                shell.Init();
-                return shell;
+    //    switch(shell.ShellExplosionType)
+    //    {
+    //        case eShellExplosionType.Circle:
+    //            shell.Init();
+    //            return shell;
             
-            case eShellExplosionType.Ellipse:
-                ShellEllipse shellEllipse = go.GetComponent<ShellEllipse>();
-                shellEllipse.Init();
-                return shellEllipse;
-        }
-        return null;
-    }
+    //        case eShellExplosionType.Ellipse:
+    //            ShellEllipse shellEllipse = go.GetComponent<ShellEllipse>();
+    //            shellEllipse.Init();
+    //            return shellEllipse;
+    //    }
+    //    return null;
+    //}
 
     private bool IsGround()
     {

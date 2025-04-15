@@ -15,13 +15,14 @@ public class AutoDestroy : MonoBehaviour
         if (Time.time < _endTime)
             return;
 
-        if (PoolManager.Instance != null)
-        {
-            PoolManager.Instance.Push(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        // TODO : 오류로 인해 잠시 막음
+        //if (PoolManager.Instance != null)
+        //{
+        //    PoolManager.Instance.Push(gameObject);
+        //}
+        //else
+        //{
+        //    Destroy(gameObject);
+        //}
     }
 }
