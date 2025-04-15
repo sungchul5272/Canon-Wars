@@ -133,9 +133,11 @@ public class GameInitializer : NetworkBehaviour
 
             CurTurnPlayer = player;
             CurTurnPlayer.FillFuel();       // 연료 회복
-            // 플레이어 카메라 포커싱
-            PlayerCameraFocusing(CurTurnPlayer);
-            Debug.Log($"Your turn.");
+
+            RandomWindForce();      // 바람 계산
+
+            Debug.Log($"Your turn: {CurTurnPlayer.gameObject.name}");
+            PlayerCameraFocusing(CurTurnPlayer);     // 플레이어 카메라 포커싱
         }
         else
         {

@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 413969507}
   - component: {fileID: 413969505}
   - component: {fileID: 413969504}
+  - component: {fileID: 413969508}
   m_Layer: 0
   m_Name: GameInitializer
   m_TagString: Untagged
@@ -168,11 +169,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 039c8608cb407e14ab760bef6ad29e4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   _mapSpawner: {fileID: 413969504}
   _tankPrefabList:
   - {fileID: 739751645702610340, guid: 68be450ddd43b334192ae9c0cc5a4b33, type: 3}
   _selectedMapType: -1
-  _playerCount: 2
   _windForceMax: 7
   _curWindForce: 0
 --- !u!4 &413969506
@@ -215,6 +216,19 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &413969508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 413969503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e339fbac33768543ba691f1fe3279b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &842959885
 GameObject:
   m_ObjectHideFlags: 0

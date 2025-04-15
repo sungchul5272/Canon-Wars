@@ -161,7 +161,7 @@ MonoBehaviour:
   UseHalfFloatPrecision: 0
   InLocalSpace: 0
   SwitchTransformSpaceWhenParented: 0
-  Interpolate: 1
+  Interpolate: 0
   SlerpPosition: 0
 --- !u!114 &-6195067499932146237
 MonoBehaviour:
@@ -192,8 +192,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac5487d0e5fccef41b9c4af57011d55b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   _moveAngleThreshold: 70
   _speed: 2
+  _curFuel: 0
   _artilleryTrans: {fileID: 8548201414771055224}
   _shellFireTrans: {fileID: 5493873208543960182}
   _artilleryRotateSpeed: 400

@@ -25,14 +25,18 @@ public class NetworkObjectPool : NetworkBehaviour
             netObj = Instantiate(prefab);
         }
 
+        if (!netObj.IsSpawned)
+        {
+            netObj.Spawn();
+        }
+  
         ShowObjectServerRpc(netObj.NetworkObjectId);
         return netObj;
     }
 
     public void RemoveNetObj(NetworkObject netObj)
     {
-       // HIde
-        _netObjPools.Enqueue(netObj);
+        HideObjectServerRpc(netObj.NetworkObjectId);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -48,6 +52,11 @@ public class NetworkObjectPool : NetworkBehaviour
         {
             netObj.gameObject.SetActive(false);
             Debug.Log($"Prefab: {netObj.gameObject} set to {netObj.gameObject.activeSelf}");
+
+            if (IsServer)
+            {
+                _netObjPools.Enqueue(netObj);
+            }
         }
     }
 

@@ -24,6 +24,7 @@ public class Shell : NetworkBehaviour
 
     private Rigidbody2D _rb2D = null;
     protected BoxCollider2D _collider2D = null;
+    private NetworkObject _networkObject = null;
 
     private float _endTime = 0f;
     private float _power = 1f;
@@ -34,6 +35,7 @@ public class Shell : NetworkBehaviour
     {
         _collider2D = GetComponent<BoxCollider2D>();
         _rb2D = GetComponent<Rigidbody2D>();
+        _networkObject = GetComponent<NetworkObject>();
     }
 
     public void Init()
@@ -77,14 +79,9 @@ public class Shell : NetworkBehaviour
         // 지속시간이 끝나면 없애기
         if (Time.time >= _endTime)
         {
-            if (PoolManager.Instance != null)
-            {
-                PoolManager.Instance.Push(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
+            // TODO : 풀링
+            //NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
+            PoolManager.Instance.Push(gameObject);
         }
     }
     protected void LateUpdate()
@@ -167,7 +164,12 @@ public class Shell : NetworkBehaviour
         GameInitializer.Instance.CurShellTrans = null;
 
         // 충돌한 경우에만 Pool
-        PoolManager.Instance.Push(gameObject);
+        if (IsServer)
+        {
+            // TODO : 풀링
+            //NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
+            PoolManager.Instance.Push(gameObject);
+        }
     }
 
     protected void CreateExplosionParticle()

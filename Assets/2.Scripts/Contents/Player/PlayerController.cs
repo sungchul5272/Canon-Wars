@@ -60,7 +60,7 @@ public class PlayerController : NetworkBehaviour
     private bool _isMyTurn = false;
     private bool _isCanFire = false;
 
-    private GameObject _curSpawnedShell;
+    private NetworkObject _curSpawnedShell;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -161,7 +161,7 @@ public class PlayerController : NetworkBehaviour
             _isFire = true;
             _curGauge = 0f;
 
-            GenerationShellServerRpc();
+            GenerationShellServerRpc(_curShellPower);
             //Shell shell = GenerationShell();
 
             //if (shell == null)
@@ -243,18 +243,20 @@ public class PlayerController : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void GenerationShellServerRpc()
+    private void GenerationShellServerRpc(float shellPower)
     {
         if (IsServer)
         {
-            _curSpawnedShell = PoolManager.Instance.Pop(_curShell);
-            NetworkObject netObj = _curSpawnedShell.GetComponent<NetworkObject>();
-            if (!netObj.IsSpawned)
+            _curSpawnedShell = PoolManager.Instance.Pop(_curShell).GetComponent<NetworkObject>();
+            if (!_curSpawnedShell.IsSpawned)
             {
-                netObj.Spawn();
+                _curSpawnedShell.Spawn();
             }
 
-            GameObject go = _curSpawnedShell;
+            // TODO : 풀링
+            //_curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
+
+            GameObject go = _curSpawnedShell.gameObject;
             if (go == null)
             {
                 Debug.LogError("Spawned shell is null!");
@@ -283,9 +285,9 @@ public class PlayerController : NetworkBehaviour
             }
 
             // 발사
-            shell.Fire(_curShellPower);
+            shell.Fire(shellPower);
 
-            SendSpawnedObjectClientRpc(netObj.NetworkObjectId);
+            SendSpawnedObjectClientRpc(_curSpawnedShell.NetworkObjectId);
         }
     }
 
@@ -294,7 +296,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
-            _curSpawnedShell = netObj.gameObject;
+            _curSpawnedShell = netObj;
 
             // 발사
             Shell shell = _curSpawnedShell.GetComponent<Shell>();
