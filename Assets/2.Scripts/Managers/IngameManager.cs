@@ -10,20 +10,28 @@ public class IngameManager : NetworkBehaviour
 
     [Header("로딩 UI")]
     [SerializeField] GameObject _loadingUI;
-    [SerializeField] Text _loadingText;
 
     [Header("턴 설정")]
     [SerializeField] float _turnTime = 40f;
     [SerializeField] float _postAttackDelay = 10f;
     [SerializeField] Text _turnTimerText;
 
+    [Header("Environment")]
+    [Range(0f, 10f)]
+    [SerializeField] private float _windForceMax = 0f;
+    [SerializeField] private float _curWindForce = 0f;
+
+    private const float TURN_END_TERM = 3f;
+
     bool _isMapSpawned = false;
     bool _isTankSpawned = false;
     bool _isGameStarted = false;
     bool _isAttackResolving = false;
+    bool _isTurnWait = false;
 
     NetworkVariable<ulong> _currentTurnClientId = new();
     NetworkVariable<float> _turnTimer = new();
+    NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     Dictionary<ulong, bool> _clientReadyDict = new();
 
@@ -37,30 +45,18 @@ public class IngameManager : NetworkBehaviour
     {
         if (IsClient && !IsServer)
         {
-            _loadingUI.SetActive(true); // 클라이언트는 로딩 UI 표시
+            _loadingUI.SetActive(true);
         }
 
         if (IsServer)
         {
-            _isGameStarted = false; // 서버는 시작 안된 상태로 초기화
+            _isGameStarted = false;
         }
     }
 
-    // 맵 생성 완료시 호출
-    public void InitMapDone()
-    {
-        _isMapSpawned = true;
-        InitAllDOne();
-    }
+    public void InitMapDone() { _isMapSpawned = true; InitAllDOne(); }
+    public void InitTankDone() { _isTankSpawned = true; InitAllDOne(); }
 
-    // 탱크 배치 완료시 호출
-    public void InitTankDone()
-    {
-        _isTankSpawned = true;
-        InitAllDOne();
-    }
-
-    // 둘 다 완료되었는지 확인 후 서버에 준비 완료 알림
     void InitAllDOne()
     {
         if (_isMapSpawned && _isTankSpawned)
@@ -69,12 +65,10 @@ public class IngameManager : NetworkBehaviour
         }
     }
 
-    // 클라이언트가 준비 완료됨을 서버에 알림
     [ServerRpc(RequireOwnership = false)]
     void ReportClientReadyServerRpc(ServerRpcParams rpcParams = default)
     {
         ulong senderId = rpcParams.Receive.SenderClientId;
-        Debug.Log($"[서버] 클라이언트 {senderId} 준비 완료");
         _clientReadyDict[senderId] = true;
 
         if (AllClientsReady())
@@ -83,127 +77,122 @@ public class IngameManager : NetworkBehaviour
         }
     }
 
-    // 모든 클라이언트가 준비 완료 상태인지 확인
     bool AllClientsReady()
     {
         foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            if (!_clientReadyDict.ContainsKey(clientId) || !_clientReadyDict[clientId])
-            {
-                return false;
-            }
+            if (!_clientReadyDict.ContainsKey(clientId) || !_clientReadyDict[clientId]) return false;
         }
         return true;
     }
 
-    // 게임 시작 루틴 - 랜덤으로 첫 턴 클라이언트 선택 후 게임 시작 알림
     IEnumerator StartGameRoutine()
     {
         yield return new WaitForSeconds(1f);
 
-        ulong randomId = NetworkManager.Singleton.ConnectedClientsIds[Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count)];
-        _currentTurnClientId.Value = randomId;
+        int startTurn = Random.Range(0, NetworkPlayerData.GetMaxPlayer());
+        _netTurnIndex.Value = startTurn;
         _turnTimer.Value = _turnTime;
 
-        NotifyGameStartClientRpc(randomId);
         _isGameStarted = true;
-        OnTurnStarted(randomId); // 첫 턴 시작 알림
-    }
-
-    // 클라이언트에게 게임 시작 알림 + 로딩 UI 제거
-    [ClientRpc]
-    void NotifyGameStartClientRpc(ulong firstTurnClientId)
-    {
-        _loadingUI.SetActive(false);
-        Debug.Log($"[클라이언트] 게임 시작, 첫 턴: {firstTurnClientId}");
+        CurrentTurnPlayerClientRpc(startTurn);
     }
 
     void Update()
     {
-        if (!IsServer || !_isGameStarted || _isAttackResolving) return;
+        if (!IsServer || !_isGameStarted || _isAttackResolving || _isTurnWait) return;
 
         _turnTimer.Value -= Time.deltaTime;
         if (_turnTimerText != null)
-        {
             _turnTimerText.text = Mathf.CeilToInt(_turnTimer.Value).ToString();
-        }
 
         if (_turnTimer.Value <= 0f)
         {
-            ChangeTurn();
+            PlayerTurnEnd();
         }
     }
 
-    // 공격이 완료되었을 때 호출됨 (클라이언트에서)
     public void NotifyAttackCompleted()
     {
-        if (!IsMyTurn() || _isAttackResolving)
-        {
-            return;
-        }
+        if (!IsMyTurn() || _isAttackResolving) return;
         StartCoroutine(DelayedEndTurn());
     }
 
-    // 공격 후 딜레이를 두고 턴을 넘김
     IEnumerator DelayedEndTurn()
     {
         _isAttackResolving = true;
         yield return new WaitForSeconds(_postAttackDelay);
-        ChangeTurn();
+        PlayerTurnEnd();
         _isAttackResolving = false;
     }
 
-    // 다음 턴의 클라이언트를 설정하고 알림
-    void ChangeTurn()
+    public void PlayerTurnEnd()
     {
-        foreach (var id in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            if (id != _currentTurnClientId.Value)
-            {
-                _currentTurnClientId.Value = id;
-                _turnTimer.Value = _turnTime;
-                SendTurnChangedClientRpc(id);
-                OnTurnStarted(id);
-                break;
-            }
-        }
+        _isTurnWait = true;
+        StartCoroutine(StartNextPlayerTurn());
     }
 
-    // 클라이언트에게 턴 변경 알림
+    private IEnumerator StartNextPlayerTurn()
+    {
+        while (GameInitializer.Instance.CurShellTrans != null)
+            yield return null;
+
+        yield return new WaitForSeconds(TURN_END_TERM);
+
+        MoveTurnServerRpc();
+        _isTurnWait = false;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void MoveTurnServerRpc()
+    {
+        _netTurnIndex.Value = (_netTurnIndex.Value + 1) % NetworkPlayerData.GetMaxPlayer();
+        CurrentTurnPlayerClientRpc(_netTurnIndex.Value);
+    }
+
     [ClientRpc]
-    void SendTurnChangedClientRpc(ulong clientId)
+    private void CurrentTurnPlayerClientRpc(int turnIndex)
     {
-        if (NetworkManager.Singleton.LocalClientId == clientId)
+        FindCurrentTurnPlayer(turnIndex);
+    }
+
+    private void FindCurrentTurnPlayer(int turnIndex)
+    {
+        ulong clientId = NetworkManager.LocalClientId;
+        if ((ulong)turnIndex == clientId)
         {
-            Debug.Log("[내 턴] 조작 활성화");
-        }
-        else
-        {
-            Debug.Log("[상대 턴] 대기 중");
+            PlayerController player = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject.GetComponent<PlayerController>();
+            player.IsMyTurn();
+            GameInitializer.Instance.CurTurnPlayer = player;
+            GameInitializer.Instance.CurTurnPlayer.FillFuel();
+            RandomWindForce();
+            PlayerCameraFocusing(GameInitializer.Instance.CurTurnPlayer);
         }
     }
 
-    // 턴 시작 시 클라이언트에서 호출됨 (카메라 이동이나 UI 표시 등에 사용 가능)
-    void OnTurnStarted(ulong turnClientId)
+    private void RandomWindForce()
     {
-        if (NetworkManager.Singleton.LocalClientId == turnClientId)
-        {
-            Debug.Log("[OnTurnStarted] 내 턴 시작!");
-        }
+        _curWindForce = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
     }
 
-    // 플레이어 사망 시 서버에 알림
+    public float GetWindForce() => _curWindForce;
+    public bool IsCurPlayerTurnWait() => _isTurnWait;
+
+    public void PlayerCameraFocusing(PlayerController playerController)
+    {
+        GameInitializer.Instance._camController.PlayerFocusing(playerController);
+    }
+
+    public bool IsMyTurn()
+    {
+        return _netTurnIndex.Value == (int)NetworkManager.Singleton.LocalClientId;
+    }
+
     [ServerRpc(RequireOwnership = false)]
     public void NotifyDeadServerRpc(ulong clientId)
     {
         Debug.Log($"게임 종료: 클라이언트 {clientId} 사망");
         _isGameStarted = false;
-    }
-
-    // 현재 로컬 클라이언트가 턴을 가지고 있는지 확인
-    public bool IsMyTurn()
-    {
-        return _currentTurnClientId.Value == NetworkManager.Singleton.LocalClientId;
     }
 }
 

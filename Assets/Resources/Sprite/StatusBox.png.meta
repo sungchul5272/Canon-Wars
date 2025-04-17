@@ -1,0 +1,267 @@
+fileFormatVersion: 2
+guid: 6f7455f2b05891940bd3b584fb9d7f6e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -3391752336353954072
+    second: StatusBox_0
+  - first:
+      213: 7939750103916935195
+    second: StatusBox_1
+  - first:
+      213: -7577369564292818310
+    second: StatusBox_2
+  - first:
+      213: -1141929759022610469
+    second: StatusBox_3
+  - first:
+      213: 5671926717817982993
+    second: StatusBox_4
+  - first:
+      213: 1378297328790637792
+    second: StatusBox_5
+  - first:
+      213: -1069935479393903242
+    second: StatusBox_6
+  - first:
+      213: 3794855054484997085
+    second: StatusBox_7
+  - first:
+      213: -4836213216261305015
+    second: StatusBox_8
+  - first:
+      213: -6550947864746878185
+    second: StatusBox_9
+  - first:
+      213: -2876016030059170548
+    second: StatusBox_10
+  - first:
+      213: -643521337764078537
+    second: StatusBox_11
+  - first:
+      213: -1510258129856061366
+    second: StatusBox_12
+  - first:
+      213: 7062269717694682266
+    second: StatusBox_13
+  - first:
+      213: -4110539213774471808
+    second: StatusBox_14
+  - first:
+      213: -8475785971320526925
+    second: StatusBox_15
+  - first:
+      213: 6164765520221600337
+    second: StatusBox_16
+  - first:
+      213: 6633240993896515435
+    second: StatusBox_17
+  - first:
+      213: 5628457558122598872
+    second: StatusBox_18
+  - first:
+      213: -8625667842637872759
+    second: StatusBox_19
+  - first:
+      213: 3215628591144346837
+    second: StatusBox_20
+  - first:
+      213: -8716373941307890617
+    second: StatusBox_21
+  - first:
+      213: 7704908532835883620
+    second: StatusBox_22
+  - first:
+      213: -4968555033811168345
+    second: StatusBox_23
+  - first:
+      213: -6221413740055812735
+    second: StatusBox_24
+  - first:
+      213: -3435489011470579296
+    second: StatusBox_25
+  - first:
+      213: 2461344840451914035
+    second: StatusBox_26
+  - first:
+      213: -3406690360836688485
+    second: StatusBox_27
+  - first:
+      213: 311891065508626931
+    second: StatusBox_28
+  - first:
+      213: 605892790635001989
+    second: StatusBox_29
+  - first:
+      213: 6345226497224945374
+    second: StatusBox_30
+  - first:
+      213: -2694388523303258978
+    second: StatusBox_31
+  - first:
+      213: 8889048448400059624
+    second: StatusBox_32
+  - first:
+      213: -8080165720248867200
+    second: StatusBox_33
+  - first:
+      213: 5190182949063373282
+    second: StatusBox_34
+  - first:
+      213: -802265012316501384
+    second: StatusBox_35
+  - first:
+      213: -3554918835700506665
+    second: StatusBox_36
+  - first:
+      213: -4404182199826489525
+    second: StatusBox_37
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: StatusBox_0
+      rect:
+        serializedVersion: 2
+        x: 265
+        y: 289
+        width: 874
+        height: 439
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fba9f934954753145941df4ca7203309
+      internalID: -337512591
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 284de6f1a2c9eec40aa27bfbdc6a2685
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      StatusBox_0: -337512591
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

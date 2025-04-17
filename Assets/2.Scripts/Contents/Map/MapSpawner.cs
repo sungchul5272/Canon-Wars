@@ -16,15 +16,6 @@ public class MapSpawner : MonoBehaviour
         _curMap = null;
 
         _seletedMapIndex = randomIndex;
-        //if (eSelectMap == eMapType.Random)
-        //{
-        //    // 랜덤으로 맵을 선택한 경우
-        //    _seletedMapIndex = Random.Range((int)eMapType.Valley, (int)eMapType.Max);
-        //}
-        //else
-        //{
-        //    _seletedMapIndex = (int)eSelectMap;
-        //}
 
         // 맵 데이터를 통해서 생성
         _curMap = _mapDataList[_seletedMapIndex];

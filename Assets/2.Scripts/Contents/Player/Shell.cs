@@ -50,8 +50,8 @@ public class Shell : NetworkBehaviour
     {
         if (_isFire)
         {
-            if (GameInitializer.Instance != null)
-                _curWindForce = GameInitializer.Instance.GetWindForce();
+            if (IngameManager.Instance != null)
+                _curWindForce = IngameManager.Instance.GetWindForce();
 
             _rb2D.AddForce(new Vector2(_curWindForce, 0f)); // 지속적으로 바람 영향
         }        

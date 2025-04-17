@@ -10,15 +10,12 @@ EditorBuildSettings:
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
     path: Assets/1.Scenes/1.StartScene.unity
-    guid: c00bd55ffafd7f64fbb8276de3b60578
+    guid: 9a02089451a0c7842a95f697482ab53b
   - enabled: 1
     path: Assets/1.Scenes/2.LobbyScene.unity
-    guid: c3af18109027fb247b422ffc230e70af
+    guid: 46b77e77b92682f43a2fbc40f58ccd3d
   - enabled: 1
     path: Assets/1.Scenes/3.IngameScene.unity
-    guid: 30a59ec0afbb75f4ea03d0b6f599768a
-  - enabled: 1
-    path: Assets/1.Scenes/MapTest.unity
     guid: bb30bb1e94b2bce4aa035fe9fbe8c677
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

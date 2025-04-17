@@ -331,8 +331,8 @@ public class PlayerController : NetworkBehaviour
             HidePredictionsPoints();
 
             // 떨어질때는 카메라 포커싱 
-            if (GameInitializer.Instance != null)
-                GameInitializer.Instance.PlayerCameraFocusing(this);
+            if (IngameManager.Instance != null)
+                IngameManager.Instance.PlayerCameraFocusing(this);
 
             return false;
         }
@@ -376,7 +376,7 @@ public class PlayerController : NetworkBehaviour
     {
         _isMyTurn = false;
         // TODO : 임시이므로 나중에 게임매니저에게 알려주기
-        GameInitializer.Instance.PlayerTurnEnd();
+        IngameManager.Instance.PlayerTurnEnd();
     }
 
     private bool CheckDead()
