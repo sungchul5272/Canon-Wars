@@ -245,33 +245,44 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void GenerationShellServerRpc(float shellPower)
     {
-        if (IsServer)
+        //_curSpawnedShell = PoolManager.Instance.Pop(_curShell).GetComponent<NetworkObject>();
+        //if (!_curSpawnedShell.IsSpawned)
+        //{
+        //    _curSpawnedShell.Spawn();
+        //}
+
+        if (!IsServer)
         {
-            _curSpawnedShell = PoolManager.Instance.Pop(_curShell).GetComponent<NetworkObject>();
-            if (!_curSpawnedShell.IsSpawned)
-            {
-                _curSpawnedShell.Spawn();
-            }
+            return;
+        }
 
-            // TODO : 풀링
-            //_curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
+        // TODO : 풀링
+        _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
+        GameObject shellGameObj = _curSpawnedShell.gameObject;
+        if (shellGameObj == null)
+        {
+            Debug.LogError("Spawned shell is null!");
+        }
 
-            GameObject go = _curSpawnedShell.gameObject;
-            if (go == null)
-            {
-                Debug.LogError("Spawned shell is null!");
-            }
+        shellGameObj.transform.position = _shellFireTrans.position;
+        shellGameObj.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
 
-            go.transform.position = _shellFireTrans.position;
-            go.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
+        // 포탄 방향 
+        Vector3 newScale = _curSpawnedShell.transform.localScale;
+        newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
+        shellGameObj.transform.localScale = newScale;
 
-            // 포탄 방향 
-            Vector3 newScale = _curSpawnedShell.transform.localScale;
-            newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
-            go.transform.localScale = newScale;
+        SendSpawnedObjectClientRpc(_curSpawnedShell.NetworkObjectId, shellPower);
+    }
 
-            Shell shell = go.GetComponent<Shell>();
-
+    [ClientRpc]
+    void SendSpawnedObjectClientRpc(ulong networkObjectId, float shellPower)
+    {
+        Debug.Log($"포탄 파워: {shellPower}.");
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
+        {
+            // 포탄 초기화
+            Shell shell = netObj.GetComponent<Shell>();
             switch (shell.ShellExplosionType)
             {
                 case eShellExplosionType.Circle:
@@ -279,7 +290,7 @@ public class PlayerController : NetworkBehaviour
                     break;
 
                 case eShellExplosionType.Ellipse:
-                    ShellEllipse shellEllipse = go.GetComponent<ShellEllipse>();
+                    ShellEllipse shellEllipse = netObj.GetComponent<ShellEllipse>();
                     shellEllipse.Init();
                     break;
             }
@@ -287,19 +298,7 @@ public class PlayerController : NetworkBehaviour
             // 발사
             shell.Fire(shellPower);
 
-            SendSpawnedObjectClientRpc(_curSpawnedShell.NetworkObjectId);
-        }
-    }
-
-    [ClientRpc]
-    void SendSpawnedObjectClientRpc(ulong networkObjectId)
-    {
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
-        {
-            _curSpawnedShell = netObj;
-
             // 포탄 위치 정보 건네주기
-            Shell shell = _curSpawnedShell.GetComponent<Shell>();
             GameInitializer.Instance.CurShellTrans = shell.transform;
 
             // 발사한 포탄 저장
@@ -308,6 +307,21 @@ public class PlayerController : NetworkBehaviour
                 _curShell = shell.gameObject;
             }
         }
+
+        //if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
+        //{
+        //    _curSpawnedShell = netObj;
+
+        //    // 포탄 위치 정보 건네주기
+        //    Shell shell = _curSpawnedShell.GetComponent<Shell>();
+        //    GameInitializer.Instance.CurShellTrans = shell.transform;
+
+        //    // 발사한 포탄 저장
+        //    if (_isMyTurn)
+        //    {
+        //        _curShell = shell.gameObject;
+        //    }
+        //}
     }
 
     private bool GroundCheckAndGravityUpdate()

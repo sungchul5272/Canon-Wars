@@ -155,7 +155,7 @@ public class IngameManager : NetworkBehaviour
 
     public void SetStartTurnIndex()
     {
-        int startTurn = 0;// UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
+        int startTurn = UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
         _netTurnIndex.Value = startTurn;
     }
 

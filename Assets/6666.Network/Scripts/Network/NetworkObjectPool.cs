@@ -15,6 +15,11 @@ public class NetworkObjectPool : NetworkBehaviour
 
     public NetworkObject CreateNetObj(NetworkObject prefab)
     {
+        if (!IsServer)
+        {
+            return null;
+        }
+
         NetworkObject netObj;
         if (_netObjPools.Count > 0)
         {
@@ -30,23 +35,42 @@ public class NetworkObjectPool : NetworkBehaviour
             netObj.Spawn();
         }
   
-        ShowObjectServerRpc(netObj.NetworkObjectId);
+        ShowObjectClientRpc(netObj.NetworkObjectId);
         return netObj;
     }
 
     public void RemoveNetObj(NetworkObject netObj)
     {
-        HideObjectServerRpc(netObj.NetworkObjectId);
+        if (IsServer)
+        {
+            HideObjectClientRpc(netObj.NetworkObjectId);
+        }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void ShowObjectServerRpc(ulong networkObjectId)
-    {
-        ShowObjectClientRpc(networkObjectId);
-    }
+    //[ServerRpc(RequireOwnership = false)]
+    //public void ShowObjectServerRpc(ulong networkObjectId)
+    //{
+    //    ShowObjectClientRpc(networkObjectId);
+    //}
 
     [ClientRpc]
     public void ShowObjectClientRpc(ulong networkObjectId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
+        {
+            netObj.gameObject.SetActive(true);
+            Debug.Log($"Prefab: {netObj.gameObject} set to {netObj.gameObject.activeSelf}");
+        }
+    }
+
+    //[ServerRpc(RequireOwnership = false)]
+    //public void HideObjectServerRpc(ulong networkObjectId)
+    //{
+    //    HideObjectClientRpc(networkObjectId);
+    //}
+
+    [ClientRpc]
+    public void HideObjectClientRpc(ulong networkObjectId)
     {
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
@@ -57,22 +81,6 @@ public class NetworkObjectPool : NetworkBehaviour
             {
                 _netObjPools.Enqueue(netObj);
             }
-        }
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void HideObjectServerRpc(ulong networkObjectId)
-    {
-        HideObjectClientRpc(networkObjectId);
-    }
-
-    [ClientRpc]
-    public void HideObjectClientRpc(ulong networkObjectId)
-    {
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
-        {
-            netObj.gameObject.SetActive(false);
-            Debug.Log($"Prefab: {netObj.gameObject} set to {netObj.gameObject.activeSelf}");
         }
     }
 }

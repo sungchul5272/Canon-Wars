@@ -40,8 +40,8 @@ public class Shell : NetworkBehaviour
 
     public void Init()
     {
-        _collider2D = GetComponent<BoxCollider2D>();
-        _rb2D = GetComponent<Rigidbody2D>();
+        //_collider2D = GetComponent<BoxCollider2D>();
+        //_rb2D = GetComponent<Rigidbody2D>();
         _isFire = false;
         _endTime = Time.time + _durtaion;
     }
@@ -69,19 +69,19 @@ public class Shell : NetworkBehaviour
 
     public void Update()
     {
-        CheckExplosion();
-
         if (!IsServer)
         {
             return;
         }
 
+        CheckExplosion();
+
         // 지속시간이 끝나면 없애기
         if (Time.time >= _endTime)
         {
             // TODO : 풀링
-            //NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
-            PoolManager.Instance.Push(gameObject);
+            NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
+            //PoolManager.Instance.Push(gameObject);
         }
     }
     protected void LateUpdate()
@@ -128,34 +128,40 @@ public class Shell : NetworkBehaviour
         // 충돌 확인 시
         if (hit.collider != null)
         {
-            // 파티클 생성
-            CreateExplosionParticle();
-
-            // 카메라 흔들림
-            CamShake();
-
-            // CircleCast를 사용하여 폭발 범위에 있는 객체 List 가져오기
-            Collider2D[] hitPlayerList = Physics2D.OverlapCircleAll(colliderCenter, _radius, LayerMask.GetMask("Player"));
-            Collider2D[] hitGroundList = Physics2D.OverlapCircleAll(colliderCenter, _radius, LayerMask.GetMask("Ground"));
-            if (hitPlayerList.Length > 0)
-            {
-                // 데미지 주기
-            }
-
-            if (hitGroundList.Length > 0)
-            {
-                foreach (var hitGround in hitGroundList)
-                {
-                    Ground ground = hitGround.GetComponent<Ground>();
-                    ground.GroundExplosion(colliderCenter, _radius);
-
-                    // 디버그용 원 스프라이트 생성
-                    //DebugExplosionCircle(colliderCenter, _radius);
-                }
-            }
-
-            ReleaseShell();
+            CheckExplosionClientRpc(colliderCenter);
         }
+    }
+
+    [ClientRpc]
+    private void CheckExplosionClientRpc(Vector2 colliderCenter)
+    {
+        // 파티클 생성
+        CreateExplosionParticle();
+
+        // 카메라 흔들림
+        CamShake();
+
+        // CircleCast를 사용하여 폭발 범위에 있는 객체 List 가져오기
+        Collider2D[] hitPlayerList = Physics2D.OverlapCircleAll(colliderCenter, _radius, LayerMask.GetMask("Player"));
+        Collider2D[] hitGroundList = Physics2D.OverlapCircleAll(colliderCenter, _radius, LayerMask.GetMask("Ground"));
+        if (hitPlayerList.Length > 0)
+        {
+            // 데미지 주기
+        }
+
+        if (hitGroundList.Length > 0)
+        {
+            foreach (var hitGround in hitGroundList)
+            {
+                Ground ground = hitGround.GetComponent<Ground>();
+                ground.GroundExplosion(colliderCenter, _radius);
+
+                // 디버그용 원 스프라이트 생성
+                //DebugExplosionCircle(colliderCenter, _radius);
+            }
+        }
+
+        ReleaseShell();
     }
 
     protected void ReleaseShell()
@@ -164,12 +170,12 @@ public class Shell : NetworkBehaviour
         GameInitializer.Instance.CurShellTrans = null;
 
         // 충돌한 경우에만 Pool
-        if (IsServer)
-        {
-            // TODO : 풀링
-            //NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
-            PoolManager.Instance.Push(gameObject);
-        }
+        NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
+        //if (IsServer)
+        //{
+        //    // TODO : 풀링
+        //    //PoolManager.Instance.Push(gameObject);
+        //}
     }
 
     protected void CreateExplosionParticle()
