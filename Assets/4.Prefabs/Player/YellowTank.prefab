@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: -6195067499932146237}
   - component: {fileID: 5773581607088765154}
   m_Layer: 8
-  m_Name: Player
+  m_Name: YellowTank
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -114,7 +114,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 742253005
+  GlobalObjectIdHash: 3877736228
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -409,7 +409,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
-  m_Sprite: {fileID: 853044492611496859, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
+  m_Sprite: {fileID: -2044679405507392079, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

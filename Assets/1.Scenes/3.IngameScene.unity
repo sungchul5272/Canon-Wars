@@ -531,7 +531,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  _loadingUI: {fileID: 642844107}
   _turnTime: 40
   _postAttackDelay: 10
   _turnTimerText: {fileID: 0}
@@ -915,10 +914,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  _loadingUI: {fileID: 337866706}
+  _myNickText: {fileID: 417452937}
+  _myTankImage: {fileID: 1227457412}
+  _enemyNickText: {fileID: 967385694}
+  _enemyTankImage: {fileID: 1781745266}
   _mapSpawner: {fileID: 413969504}
   _tankPrefabList:
   - {fileID: 739751645702610340, guid: 68be450ddd43b334192ae9c0cc5a4b33, type: 3}
+  - {fileID: 739751645702610340, guid: 672512ff4a71e8d4a956b9412207d2eb, type: 3}
   _selectedMapType: -1
+  _ingameUI: {fileID: 642844107}
 --- !u!4 &413969506
 Transform:
   m_ObjectHideFlags: 0
@@ -1058,7 +1064,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Player1 Name
+  m_Text: "\uC5F0\uACB0\uB300\uAE30\uC911"
 --- !u!222 &417452938
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1367,7 +1373,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &642844108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1945,7 +1951,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Player1 Name
+  m_Text: "\uC5F0\uACB0\uB300\uAE30\uC911"
 --- !u!222 &967385695
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1972,7 +1978,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &971167008
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2082,7 +2088,7 @@ RectTransform:
   m_Father: {fileID: 678984124}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2585,7 +2591,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -4315122233561715252, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3073,7 +3079,7 @@ RectTransform:
   m_Father: {fileID: 508827719}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3247,7 +3253,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1709304034
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3381,7 +3387,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -4315122233561715252, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3427,8 +3433,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 83407285}
   - {fileID: 1652627628}
+  - {fileID: 83407285}
   m_Father: {fileID: 642844111}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}

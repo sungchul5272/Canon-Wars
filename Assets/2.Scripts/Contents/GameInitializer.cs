@@ -2,15 +2,27 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.UI;
+using System.Collections;
 
 public class GameInitializer : NetworkBehaviour
 {
     public static GameInitializer Instance;
 
+    [Header("로딩 UI")]
+    [SerializeField] GameObject _loadingUI;
+    [SerializeField] Text _myNickText;
+    [SerializeField] Image _myTankImage;
+    [SerializeField] Text _enemyNickText;
+    [SerializeField] Image _enemyTankImage;
+
     [Header("맵 및 탱크 프리팹")]
     [SerializeField] private MapSpawner _mapSpawner;
     [SerializeField] private List<GameObject> _tankPrefabList;
     [SerializeField] private eMapType _selectedMapType = eMapType.Random;
+
+    [Header("인게임 UI")]
+    [SerializeField] GameObject _ingameUI;
 
     public Transform CurShellTrans { get; set; }
     public CameraController _camController { get; private set; }
@@ -18,6 +30,7 @@ public class GameInitializer : NetworkBehaviour
 
     private NetworkVariable<int> _netMapIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private List<Vector3> _spawnPosList = new();
+    private Dictionary<ulong, UserData> _clientUserData = new();
 
     void Awake()
     {
@@ -27,27 +40,51 @@ public class GameInitializer : NetworkBehaviour
         _camController = Camera.main.GetComponent<CameraController>();
     }
 
-    void Start()
-    {
-        Init();
-    }
-
     public override void OnNetworkSpawn()
     {
         _netMapIndex.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[GameInitializer] 맵 인덱스 변경: {prev} → {next}");
         };
+
+        if (IsClient)
+        {
+            SetMyInfoUI(FirebaseManager._instance.userVO.NickName, FirebaseManager._instance.userVO.NowTank);
+            ReportPlayerInfoServerRpc(
+                FirebaseManager._instance.userVO.NickName,
+                FirebaseManager._instance.userVO.NowTank
+            );
+
+            _loadingUI.SetActive(true);
+
+        }
+
+        if (IsServer)
+        {
+            StartCoroutine(InitRoutine());
+        }
     }
 
-    public void Init(Action callback = null)
+    private IEnumerator InitRoutine()
     {
+        Debug.Log("[GameInitializer] InitRoutine 시작");
+
+        yield return new WaitForSeconds(0.5f);
+
         SpawnMap();
+        Debug.Log("[GameInitializer] 맵 생성 완료");
+
         SpawnPlayers();
+        Debug.Log("[GameInitializer] 탱크 생성 완료");
 
+        _camController = Camera.main.GetComponent<CameraController>();
         _camController?.Init();
+        Debug.Log("[GameInitializer] 카메라 초기화 완료");
 
-        callback?.Invoke();
+        yield return new WaitForSeconds(5f);
+
+        CloseLoadingUIClientRpc();
+
     }
 
     private void SpawnMap()
@@ -58,7 +95,6 @@ public class GameInitializer : NetworkBehaviour
         }
 
         _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
-        IngameManager.Instance.InitMapDone();
     }
 
     private void SpawnPlayers()
@@ -95,7 +131,6 @@ public class GameInitializer : NetworkBehaviour
         var player = tank.GetComponent<PlayerController>();
         if (player.transform.position.x > 0) player.Flip(-1);
 
-        IngameManager.Instance.InitTankDone();
         Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
 
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
@@ -111,5 +146,65 @@ public class GameInitializer : NetworkBehaviour
             return Vector2.zero;
         }
         return _mapSpawner.GetMapSize();
+    }
+
+
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ReportPlayerInfoServerRpc(string nick, string tankKey, ServerRpcParams rpcParams = default)
+    {
+        ulong senderId = rpcParams.Receive.SenderClientId;
+
+        _clientUserData[senderId] = new UserData
+        {
+            NickName = nick,
+            NowTank = tankKey
+        };
+
+        Debug.Log($"[서버] 유저 정보 등록 완료 - ID: {senderId}, 닉네임: {nick}, 탱크: {tankKey}");
+
+        if (_clientUserData.Count >= 2)
+        {
+            foreach (var pair in _clientUserData)
+            {
+                foreach (var target in _clientUserData)
+                {
+                    if (pair.Key != target.Key)
+                    {
+                        SendPlayerInfoClientRpc(pair.Value.NickName, pair.Value.NowTank, new ClientRpcParams
+                        {
+                            Send = new ClientRpcSendParams { TargetClientIds = new[] { target.Key } }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    [ClientRpc]
+    void SendPlayerInfoClientRpc(string enemyNick, string enemyTankKey, ClientRpcParams clientRpcParams = default)
+    {
+        _enemyNickText.text = enemyNick;
+        _enemyTankImage.sprite = TankUtil.GetTankSprite(enemyTankKey);
+
+        Debug.Log($"[클라이언트] 상대 정보 수신 - 닉네임: {enemyNick}, 탱크: {enemyTankKey}");
+    }
+
+    public void SetMyInfoUI(string nick, string tankKey)
+    {
+        _myNickText.text = nick;
+        _myTankImage.sprite = TankUtil.GetTankSprite(tankKey);
+        Debug.Log($"[클라이언트] 내 정보 UI 세팅 - 닉네임: {nick}, 탱크: {tankKey}");
+    }
+
+
+
+    [ClientRpc]
+    void CloseLoadingUIClientRpc()
+    {
+        _loadingUI.SetActive(false);
+        Debug.Log("[GameInitializer] 초기화 완료! 로딩 UI 닫기");
+
+        _ingameUI.SetActive(true);
     }
 }

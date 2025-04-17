@@ -24,11 +24,15 @@ public class InfoPanel : MonoBehaviour
     private Color _defaultColor = Color.white;
     private Color _selectedColor = Color.yellow;
 
+
     FirebaseManager _fm;
 
     void Start()
     {
         _fm = FirebaseManager._instance;
+        string tankKey = "GreenTank";
+        _equippedTankImage.sprite = TankUtil.GetTankSprite(tankKey);
+
 
         _applyBtn.onClick.AddListener(OnClickApply);
         _confirmBtn.onClick.AddListener(OnClickConfirm);

@@ -10,13 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 53eeb45d0cb802f4c809840e3c9fc241, type: 3}
-  m_Name: TankData1
+  m_Name: YellowTank
   m_EditorClassIdentifier: 
-  _tankName: testTank1
-  _hp: 100
-  _atk: 10
-  _speed: 2
-  _tankSprite: {fileID: -4315122233561715252, guid: 0bf0a544981efbb459e14f2d1fd7d51b, type: 3}
-  _missileSprite: {fileID: 0}
-  _missileSpeed: 0
-  _missileEffect: {fileID: 0}
+  _tankName: YellowTank
+  _hp: 150
+  _atk: 5
+  _speed: 1.5
+  _tankSprite: {fileID: -6224010137909128836, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
