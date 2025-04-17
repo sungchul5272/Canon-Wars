@@ -55,6 +55,7 @@ public class LobbyManager : MonoBehaviour
     string _lobbyNotFoundError = "lobby not found";
     float _maintainLobbyTime = 20;
     float _checkLobbyTime = 1.1f;
+    bool _isGameStart;
 
     void Awake()
     {
@@ -64,6 +65,7 @@ public class LobbyManager : MonoBehaviour
     async void Start()
     {
         _joinedLobby = null;
+        _isGameStart = false;
 
         // 익명으로 유니티 로그인
         try
@@ -343,6 +345,7 @@ public class LobbyManager : MonoBehaviour
         // 호스트로 게임 시작
         try
         {
+            _isGameStart = true;
             loadingUI.SetActive(true);
             string relayCode = await CreateRelay();
             _joinedLobby = await Lobbies.Instance.UpdateLobbyAsync(_joinedLobby.Id, new UpdateLobbyOptions
@@ -444,7 +447,7 @@ public class LobbyManager : MonoBehaviour
         }
 
         mainLobbyUI.RefreshPlayersUI(playerIndex, gameReady);
-        loadingUI.SetActive(false);
+        loadingUI.SetActive(_isGameStart);
     }
 
     async void DeleteLobby()
@@ -501,6 +504,7 @@ public class LobbyManager : MonoBehaviour
     void StartGameAsClient(string joinCode)
     {
         // 클라이언트로 게임 시작
+        _isGameStart = true;
         loadingUI.SetActive(true);
         JoinRelay(joinCode);
         CancelInvoke(nameof(RefreshPlayers));

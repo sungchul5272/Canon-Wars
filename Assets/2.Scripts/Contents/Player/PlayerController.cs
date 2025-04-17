@@ -298,11 +298,8 @@ public class PlayerController : NetworkBehaviour
         {
             _curSpawnedShell = netObj;
 
-            // 발사
-            Shell shell = _curSpawnedShell.GetComponent<Shell>();
-            //shell.Fire(_curShellPower);
-
             // 포탄 위치 정보 건네주기
+            Shell shell = _curSpawnedShell.GetComponent<Shell>();
             GameInitializer.Instance.CurShellTrans = shell.transform;
 
             // 발사한 포탄 저장

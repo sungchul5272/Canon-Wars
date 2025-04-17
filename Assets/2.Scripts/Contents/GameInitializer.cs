@@ -23,6 +23,8 @@ public class GameInitializer : NetworkBehaviour
     {
         if (Instance == null)
             Instance = this;
+
+        _camController = Camera.main.GetComponent<CameraController>();
     }
 
     void Start()
@@ -43,7 +45,6 @@ public class GameInitializer : NetworkBehaviour
         SpawnMap();
         SpawnPlayers();
 
-        _camController = Camera.main.GetComponent<CameraController>();
         _camController?.Init();
 
         callback?.Invoke();
@@ -57,6 +58,7 @@ public class GameInitializer : NetworkBehaviour
         }
 
         _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+        IngameManager.Instance.InitMapDone();
     }
 
     private void SpawnPlayers()
@@ -71,6 +73,7 @@ public class GameInitializer : NetworkBehaviour
         }
 
         NetworkManager.Singleton.OnClientConnectedCallback += SpawnPlayer;
+        //NetworkManager.Singleton.ConnectedClients[0].name
     }
 
     private void SpawnPlayer(ulong clientId)
@@ -92,7 +95,13 @@ public class GameInitializer : NetworkBehaviour
         var player = tank.GetComponent<PlayerController>();
         if (player.transform.position.x > 0) player.Flip(-1);
 
+        IngameManager.Instance.InitTankDone();
         Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
+
+        if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
+        {
+            IngameManager.Instance.SetStartTurnIndex();
+        }
     }
 
     public Vector2 GetMapSize()

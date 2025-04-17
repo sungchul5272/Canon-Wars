@@ -43,6 +43,13 @@ public class IngameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        _netTurnIndex.OnValueChanged += (prev, next) =>
+        {
+            Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
+
+            FindCurrentTurnPlayerClientRpc(next);
+        };
+
         if (IsClient && !IsServer)
         {
             _loadingUI.SetActive(true);
@@ -90,12 +97,9 @@ public class IngameManager : NetworkBehaviour
     {
         yield return new WaitForSeconds(1f);
 
-        int startTurn = Random.Range(0, NetworkPlayerData.GetMaxPlayer());
-        _netTurnIndex.Value = startTurn;
         _turnTimer.Value = _turnTime;
 
         _isGameStarted = true;
-        CurrentTurnPlayerClientRpc(startTurn);
     }
 
     void Update()
@@ -147,26 +151,41 @@ public class IngameManager : NetworkBehaviour
     private void MoveTurnServerRpc()
     {
         _netTurnIndex.Value = (_netTurnIndex.Value + 1) % NetworkPlayerData.GetMaxPlayer();
-        CurrentTurnPlayerClientRpc(_netTurnIndex.Value);
+    }
+
+    public void SetStartTurnIndex()
+    {
+        int startTurn = 0;// UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
+        _netTurnIndex.Value = startTurn;
     }
 
     [ClientRpc]
-    private void CurrentTurnPlayerClientRpc(int turnIndex)
-    {
-        FindCurrentTurnPlayer(turnIndex);
-    }
-
-    private void FindCurrentTurnPlayer(int turnIndex)
+    public void FindCurrentTurnPlayerClientRpc(int turnIndex)
     {
         ulong clientId = NetworkManager.LocalClientId;
         if ((ulong)turnIndex == clientId)
         {
-            PlayerController player = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject.GetComponent<PlayerController>();
+            Debug.Log($"나의 턴.");
+            NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+            if (playerObject == null)
+            {
+                Debug.LogError("Player Object is null.");
+            }
+
+            if (!playerObject.TryGetComponent<PlayerController>(out var player))
+            {
+                Debug.LogError("Player Controller is null.");
+            }
+
             player.IsMyTurn();
             GameInitializer.Instance.CurTurnPlayer = player;
             GameInitializer.Instance.CurTurnPlayer.FillFuel();
             RandomWindForce();
             PlayerCameraFocusing(GameInitializer.Instance.CurTurnPlayer);
+        }
+        else
+        {
+            Debug.Log($"Player {turnIndex}의 턴.");
         }
     }
 

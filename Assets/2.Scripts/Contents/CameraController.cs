@@ -30,6 +30,11 @@ public class CameraController : MonoBehaviour
     private float _zoomTime = 0f;
     private bool _isInit = false;
 
+    void Awake()
+    {
+        _camera = GetComponent<Camera>();
+        _trans = transform;
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -39,9 +44,6 @@ public class CameraController : MonoBehaviour
 
     public void Init()
     {
-        _camera = GetComponent<Camera>();
-        _trans = transform;
-
         // 원래 카메라 크기 저장
         _camSizeOriginHeight = _camera.orthographicSize;
         _camSizeOriginWidth = _camSizeOriginHeight * _camera.aspect;
