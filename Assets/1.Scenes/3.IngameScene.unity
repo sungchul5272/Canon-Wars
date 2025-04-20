@@ -531,6 +531,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  _loadingUI: {fileID: 0}
   _turnTime: 40
   _postAttackDelay: 10
   _turnTimerText: {fileID: 0}

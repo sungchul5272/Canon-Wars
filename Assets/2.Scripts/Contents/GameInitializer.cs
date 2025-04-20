@@ -56,44 +56,48 @@ public class GameInitializer : NetworkBehaviour
             );
 
             _loadingUI.SetActive(true);
-
         }
 
-        if (IsServer)
-        {
-            StartCoroutine(InitRoutine());
-        }
+        StartCoroutine(InitRoutine());
     }
 
     private IEnumerator InitRoutine()
     {
-        Debug.Log("[GameInitializer] InitRoutine 시작");
+        // 호스트일 경우
+        if (IsServer)
+        {
+            Debug.Log("[GameInitializer] InitRoutine 시작");
 
-        yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.5f);
 
-        SpawnMap();
-        Debug.Log("[GameInitializer] 맵 생성 완료");
+            // 생성할 맵 결정
+            SetMapToSpawn();
+            Debug.Log("[GameInitializer] 맵 생성 완료");
 
-        SpawnPlayers();
-        Debug.Log("[GameInitializer] 탱크 생성 완료");
+            // 플레이어 생성
+            SpawnPlayers();
+            Debug.Log("[GameInitializer] 탱크 생성 완료");
+        }
 
+        // 클라이언트도 맵을 생성해야 함
+        _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+
+        // 각자의 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
         _camController?.Init();
         Debug.Log("[GameInitializer] 카메라 초기화 완료");
 
-        yield return new WaitForSeconds(5f);
-
-        CloseLoadingUIClientRpc();
-
-    }
-
-    private void SpawnMap()
-    {
         if (IsServer)
         {
-            _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
+            yield return new WaitForSeconds(5f);
+            CloseLoadingUIClientRpc();
         }
+    }
 
+    private void SetMapToSpawn()
+    {
+        // 생성할 맵 결정
+        _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
         _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
     }
 

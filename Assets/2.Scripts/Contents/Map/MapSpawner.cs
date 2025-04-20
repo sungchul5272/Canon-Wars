@@ -43,6 +43,11 @@ public class MapSpawner : MonoBehaviour
 
     public Vector2 GetMapSize()
     {
+        if (_curMap== null)
+        {
+            Debug.LogError("Cur map is null!");
+        }
+
         return _curMap.mapSize;
     }
 

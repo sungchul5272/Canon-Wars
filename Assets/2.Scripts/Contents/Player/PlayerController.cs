@@ -62,10 +62,10 @@ public class PlayerController : NetworkBehaviour
 
     private NetworkObject _curSpawnedShell;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Awake()
     {
-        //Init();
+        _rb2D = GetComponent<Rigidbody2D>();
+        _colider2D = GetComponent<CircleCollider2D>();
     }
 
     public override void OnNetworkSpawn()
@@ -75,9 +75,6 @@ public class PlayerController : NetworkBehaviour
 
     public void Init()
     {
-        _rb2D = GetComponent<Rigidbody2D>();
-        _colider2D = GetComponent<CircleCollider2D>();
-
         // Default
         _curShell = _shellList[0];
 
@@ -96,11 +93,11 @@ public class PlayerController : NetworkBehaviour
 
         HidePredictionsPoints();
     }
-    // Update is called once per frame
 
+    // Update is called once per frame
     private void Update()
     {
-        if(CheckDead() == true)
+        if (CheckDead() == true)
         {
             // 죽음 이후 메소드 한번 실행
             if(_bAfterDeadEvent == false)
@@ -146,7 +143,7 @@ public class PlayerController : NetworkBehaviour
         }
 
         // 파워게이지 증가 시키기
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKey(KeyCode.Space) && _isCanFire)
         {
             if(_isFire == true)
                 _isFire = false;
@@ -156,33 +153,23 @@ public class PlayerController : NetworkBehaviour
         }
 
         // 포탄 발사
-        if (Input.GetKeyUp(KeyCode.Space))
+        if (Input.GetKeyUp(KeyCode.Space) && _isCanFire)
         {
             _isFire = true;
             _curGauge = 0f;
+            _isCanFire = false;
 
+            // 포탄 생성
             GenerationShellServerRpc(_curShellPower);
-            //Shell shell = GenerationShell();
 
-            //if (shell == null)
-            //{
-            //    Debug.LogWarning("Generation Shell is Null !!!");
-            //}
-
-            //// 발사
-            //shell.Fire(_curShellPower);
-
-            //// 포탄 위치 정보 건네주기
-            //GameInitializer.Instance.CurShellTrans = shell.transform;
-
-            //// 발사한 포탄 저장
-            //_curShell = shell.gameObject;
-            // 이전 포탄 파워 값 저장
+            // 이전 파워 값 저장
             _prevShellPower = _curShellPower;
 
+            // 예측 점 비활성화
             HidePredictionsPoints();
 
-            _isCanFire = false;
+            // 턴 종료
+            EndTurn();
         }
 
         // 포 각도 조절
@@ -233,14 +220,14 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
-    private void LateUpdate()
-    {
-        // Input 문제로 인해 LateUpdate에서 확인
-        if(_isMyTurn == true && _isCanFire == false)
-        {
-            EndTurn();
-        }
-    }
+    //private void LateUpdate()
+    //{
+    //    // Input 문제로 인해 LateUpdate에서 확인
+    //    if(_isMyTurn == true && _isCanFire == false)
+    //    {
+    //        EndTurn();
+    //    }
+    //}
 
     [ServerRpc(RequireOwnership = false)]
     private void GenerationShellServerRpc(float shellPower)
@@ -255,6 +242,8 @@ public class PlayerController : NetworkBehaviour
         {
             return;
         }
+
+        Debug.Log($"서버 포탄 파워: {shellPower}.");
 
         // TODO : 풀링
         _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
@@ -278,7 +267,7 @@ public class PlayerController : NetworkBehaviour
     [ClientRpc]
     void SendSpawnedObjectClientRpc(ulong networkObjectId, float shellPower)
     {
-        Debug.Log($"포탄 파워: {shellPower}.");
+        Debug.Log($"클라이언트 포탄 파워: {shellPower}.");
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
             // 포탄 초기화

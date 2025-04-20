@@ -29,8 +29,8 @@ public class IngameManager : NetworkBehaviour
     bool _isAttackResolving = false;
     bool _isTurnWait = false;
 
-    NetworkVariable<ulong> _currentTurnClientId = new();
-    NetworkVariable<float> _turnTimer = new();
+    //NetworkVariable<ulong> _currentTurnClientId = new();
+    NetworkVariable<float> _turnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     Dictionary<ulong, bool> _clientReadyDict = new();
@@ -52,7 +52,10 @@ public class IngameManager : NetworkBehaviour
 
         if (IsClient && !IsServer)
         {
-            _loadingUI.SetActive(true);
+            if (_loadingUI != null)
+            {
+                _loadingUI.SetActive(true);
+            }
         }
 
         if (IsServer)
@@ -112,6 +115,10 @@ public class IngameManager : NetworkBehaviour
 
         if (_turnTimer.Value <= 0f)
         {
+            // 반복 호출 방지
+            _turnTimer.Value = 99999;
+
+            // 턴 종료
             PlayerTurnEnd();
         }
     }
@@ -138,18 +145,22 @@ public class IngameManager : NetworkBehaviour
 
     private IEnumerator StartNextPlayerTurn()
     {
+        // 포탄이 사라질 때까지 대기
         while (GameInitializer.Instance.CurShellTrans != null)
             yield return null;
 
+        // 약간의 지연 시간
         yield return new WaitForSeconds(TURN_END_TERM);
 
-        MoveTurnServerRpc();
+        // 턴 이동
         _isTurnWait = false;
+        MoveTurnServerRpc();
     }
 
     [ServerRpc(RequireOwnership = false)]
     private void MoveTurnServerRpc()
     {
+        _turnTimer.Value = _turnTime;
         _netTurnIndex.Value = (_netTurnIndex.Value + 1) % NetworkPlayerData.GetMaxPlayer();
     }
 
@@ -177,11 +188,11 @@ public class IngameManager : NetworkBehaviour
                 Debug.LogError("Player Controller is null.");
             }
 
-            player.IsMyTurn();
             GameInitializer.Instance.CurTurnPlayer = player;
-            GameInitializer.Instance.CurTurnPlayer.FillFuel();
+            player.IsMyTurn();
+            player.FillFuel();
             RandomWindForce();
-            PlayerCameraFocusing(GameInitializer.Instance.CurTurnPlayer);
+            PlayerCameraFocusing(player);
         }
         else
         {
