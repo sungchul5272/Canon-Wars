@@ -8,8 +8,8 @@ public class IngameManager : NetworkBehaviour
 {
     public static IngameManager Instance;
 
-    [Header("로딩 UI")]
-    [SerializeField] GameObject _loadingUI;
+    //[Header("로딩 UI")]
+    //[SerializeField] GameObject _loadingUI;
 
     [Header("턴 설정")]
     [SerializeField] float _turnTime = 40f;
@@ -50,13 +50,10 @@ public class IngameManager : NetworkBehaviour
             FindCurrentTurnPlayerClientRpc(next);
         };
 
-        if (IsClient && !IsServer)
-        {
-            if (_loadingUI != null)
-            {
-                _loadingUI.SetActive(true);
-            }
-        }
+        //if (IsClient && !IsServer)
+        //{
+        //    _loadingUI.SetActive(true);
+        //}
 
         if (IsServer)
         {

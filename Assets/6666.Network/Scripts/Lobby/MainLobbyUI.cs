@@ -8,6 +8,7 @@ public class MainLobbyUI : MonoBehaviour
     public PlayerSlotUI playerSlotPrefab;
     public GameObject sessionEndedUI;
     public GameObject kickedUI;
+    public ScrollRect playerScrollView;
     public RectTransform playerScrollContent;
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI lobbyCodeText;
@@ -22,6 +23,7 @@ public class MainLobbyUI : MonoBehaviour
 
     void Start()
     {
+        playerScrollView.gameObject.SetActive(false);
         LobbyManager instance = LobbyManager.Instance;
 
         // ¡ÿ∫Ò
@@ -61,6 +63,7 @@ public class MainLobbyUI : MonoBehaviour
     void OnEnable()
     {
         readyToggle.isOn = false;
+        playerScrollView.gameObject.SetActive(false);
         playButton.gameObject.SetActive(true);
         sessionEndedUI.SetActive(false);
         kickedUI.SetActive(false);
@@ -129,6 +132,7 @@ public class MainLobbyUI : MonoBehaviour
         playerScrollContent.sizeDelta = new Vector2(playerScrollContent.sizeDelta.x, instance.LobbyPlayerDatas.Count * slotHeight);
         readyToggle.interactable = readyToggle.isOn == LobbyManager.Instance.LobbyPlayerDatas[playerIndex].ready;
         playButton.interactable = gameReady;
+        playerScrollView.gameObject.SetActive(true);
     }
 
     public void ShowSessionEndedUI()

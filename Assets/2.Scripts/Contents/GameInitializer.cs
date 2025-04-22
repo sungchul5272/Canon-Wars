@@ -63,7 +63,6 @@ public class GameInitializer : NetworkBehaviour
 
     private IEnumerator InitRoutine()
     {
-        // 호스트일 경우
         if (IsServer)
         {
             Debug.Log("[GameInitializer] InitRoutine 시작");
@@ -73,14 +72,17 @@ public class GameInitializer : NetworkBehaviour
             // 생성할 맵 결정
             SetMapToSpawn();
             Debug.Log("[GameInitializer] 맵 생성 완료");
-
-            // 플레이어 생성
-            SpawnPlayers();
-            Debug.Log("[GameInitializer] 탱크 생성 완료");
         }
 
         // 클라이언트도 맵을 생성해야 함
         _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+
+        if (IsServer)
+        {
+            // 플레이어 생성
+            SpawnPlayers();
+            Debug.Log("[GameInitializer] 탱크 생성 완료");
+        }
 
         // 각자의 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
@@ -98,7 +100,6 @@ public class GameInitializer : NetworkBehaviour
     {
         // 생성할 맵 결정
         _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
-        _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
     }
 
     private void SpawnPlayers()

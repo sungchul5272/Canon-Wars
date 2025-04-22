@@ -245,14 +245,11 @@ public class PlayerController : NetworkBehaviour
 
         Debug.Log($"서버 포탄 파워: {shellPower}.");
 
-        // TODO : 풀링
+        // 포탄 풀링
         _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
-        GameObject shellGameObj = _curSpawnedShell.gameObject;
-        if (shellGameObj == null)
-        {
-            Debug.LogError("Spawned shell is null!");
-        }
 
+        // 포탄 위치와 회전
+        GameObject shellGameObj = _curSpawnedShell.gameObject;
         shellGameObj.transform.position = _shellFireTrans.position;
         shellGameObj.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
 
@@ -260,6 +257,23 @@ public class PlayerController : NetworkBehaviour
         Vector3 newScale = _curSpawnedShell.transform.localScale;
         newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
         shellGameObj.transform.localScale = newScale;
+
+        // 포탄 초기화
+        Shell shell = _curSpawnedShell.GetComponent<Shell>();
+        switch (shell.ShellExplosionType)
+        {
+            case eShellExplosionType.Circle:
+                shell.Init();
+                break;
+
+            case eShellExplosionType.Ellipse:
+                ShellEllipse shellEllipse = shell.GetComponent<ShellEllipse>();
+                shellEllipse.Init();
+                break;
+        }
+
+        // 발사
+        shell.Fire(shellPower);
 
         SendSpawnedObjectClientRpc(_curSpawnedShell.NetworkObjectId, shellPower);
     }
@@ -270,30 +284,30 @@ public class PlayerController : NetworkBehaviour
         Debug.Log($"클라이언트 포탄 파워: {shellPower}.");
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
-            // 포탄 초기화
-            Shell shell = netObj.GetComponent<Shell>();
-            switch (shell.ShellExplosionType)
-            {
-                case eShellExplosionType.Circle:
-                    shell.Init();
-                    break;
+            //// 포탄 초기화
+            //Shell shell = netObj.GetComponent<Shell>();
+            //switch (shell.ShellExplosionType)
+            //{
+            //    case eShellExplosionType.Circle:
+            //        shell.Init();
+            //        break;
 
-                case eShellExplosionType.Ellipse:
-                    ShellEllipse shellEllipse = netObj.GetComponent<ShellEllipse>();
-                    shellEllipse.Init();
-                    break;
-            }
+            //    case eShellExplosionType.Ellipse:
+            //        ShellEllipse shellEllipse = netObj.GetComponent<ShellEllipse>();
+            //        shellEllipse.Init();
+            //        break;
+            //}
 
-            // 발사
-            shell.Fire(shellPower);
+            //// 발사
+            //shell.Fire(shellPower);
 
             // 포탄 위치 정보 건네주기
-            GameInitializer.Instance.CurShellTrans = shell.transform;
+            GameInitializer.Instance.CurShellTrans = netObj.transform;
 
             // 발사한 포탄 저장
             if (_isMyTurn)
             {
-                _curShell = shell.gameObject;
+                _curShell = netObj.gameObject;
             }
         }
 

@@ -8,6 +8,7 @@ public class SortLobbyUI : MonoBehaviour
 {
     public LobbySlotUI lobbySlotPrefab;
     public GameObject joinFailedUI;
+    public ScrollRect lobbyScrollView;
     public RectTransform lobbyScrollContent;
     public TMP_Dropdown gameModeDropDown;
     public TMP_InputField lobbyCodeInputField;
@@ -22,6 +23,8 @@ public class SortLobbyUI : MonoBehaviour
 
     void Start()
     {
+        lobbyScrollView.gameObject.SetActive(false);
+
         // 비공개 로비 참가
         joinPrivateButton.onClick.AddListener(() =>
         {
@@ -44,6 +47,7 @@ public class SortLobbyUI : MonoBehaviour
 
     void OnEnable()
     {
+        lobbyScrollView.gameObject.SetActive(false);
         LobbyManager instance = LobbyManager.Instance;
         instance.RefreshPublicLobbies(GameMode);
 
@@ -89,6 +93,7 @@ public class SortLobbyUI : MonoBehaviour
 
         float slotHeight = lobbySlotPrefab.rectTransform.sizeDelta.y;
         lobbyScrollContent.sizeDelta = new Vector2(lobbyScrollContent.sizeDelta.x, instance.PublicLobbyDatas.Count * slotHeight);
+        lobbyScrollView.gameObject.SetActive(true);
     }
 
     public void ShowJoinFailedUI()
