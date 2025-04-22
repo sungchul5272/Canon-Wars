@@ -284,23 +284,6 @@ public class PlayerController : NetworkBehaviour
         Debug.Log($"클라이언트 포탄 파워: {shellPower}.");
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
-            //// 포탄 초기화
-            //Shell shell = netObj.GetComponent<Shell>();
-            //switch (shell.ShellExplosionType)
-            //{
-            //    case eShellExplosionType.Circle:
-            //        shell.Init();
-            //        break;
-
-            //    case eShellExplosionType.Ellipse:
-            //        ShellEllipse shellEllipse = netObj.GetComponent<ShellEllipse>();
-            //        shellEllipse.Init();
-            //        break;
-            //}
-
-            //// 발사
-            //shell.Fire(shellPower);
-
             // 포탄 위치 정보 건네주기
             GameInitializer.Instance.CurShellTrans = netObj.transform;
 
@@ -310,21 +293,6 @@ public class PlayerController : NetworkBehaviour
                 _curShell = netObj.gameObject;
             }
         }
-
-        //if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
-        //{
-        //    _curSpawnedShell = netObj;
-
-        //    // 포탄 위치 정보 건네주기
-        //    Shell shell = _curSpawnedShell.GetComponent<Shell>();
-        //    GameInitializer.Instance.CurShellTrans = shell.transform;
-
-        //    // 발사한 포탄 저장
-        //    if (_isMyTurn)
-        //    {
-        //        _curShell = shell.gameObject;
-        //    }
-        //}
     }
 
     private bool GroundCheckAndGravityUpdate()

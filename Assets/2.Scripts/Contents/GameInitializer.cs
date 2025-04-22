@@ -70,11 +70,11 @@ public class GameInitializer : NetworkBehaviour
             yield return new WaitForSeconds(0.5f);
 
             // 생성할 맵 결정
-            SetMapToSpawn();
+            _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
             Debug.Log("[GameInitializer] 맵 생성 완료");
         }
 
-        // 클라이언트도 맵을 생성해야 함
+        // 맵 생성
         _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
 
         if (IsServer)
@@ -94,12 +94,6 @@ public class GameInitializer : NetworkBehaviour
             yield return new WaitForSeconds(5f);
             CloseLoadingUIClientRpc();
         }
-    }
-
-    private void SetMapToSpawn()
-    {
-        // 생성할 맵 결정
-        _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
     }
 
     private void SpawnPlayers()
