@@ -385,41 +385,6 @@ public class PlayerController : NetworkBehaviour
         Destroy(gameObject);
     }
 
-    //private Shell GenerationShell()
-    //{
-    //    GameObject go = PoolManager.Instance.Pop(_curShell.gameObject);
-
-    //    if (go == null)
-    //    {
-    //        go = Instantiate(_curShell, _shellFireTrans.position, Quaternion.identity);
-    //        PoolManager.Instance.Push(go);
-    //    }
-            
-    //    go.transform.position = _shellFireTrans.position;
-    //    go.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
-        
-    //    // 포탄 방향 
-
-    //    Vector3 newScale = go.transform.localScale;
-    //    newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
-    //    go.transform.localScale = newScale;
-
-    //    Shell shell = go.GetComponent<Shell>();
-
-    //    switch(shell.ShellExplosionType)
-    //    {
-    //        case eShellExplosionType.Circle:
-    //            shell.Init();
-    //            return shell;
-            
-    //        case eShellExplosionType.Ellipse:
-    //            ShellEllipse shellEllipse = go.GetComponent<ShellEllipse>();
-    //            shellEllipse.Init();
-    //            return shellEllipse;
-    //    }
-    //    return null;
-    //}
-
     private bool IsGround()
     {
         // CircleCollider2D 중심 가져오기

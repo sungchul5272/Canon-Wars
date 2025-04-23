@@ -45,6 +45,9 @@ public class LobbyManager : MonoBehaviour
 
     public bool IsLobbyHost => _joinedLobby.HostId == AuthenticationService.Instance.PlayerId;
 
+    public eMapType selectedMapType = eMapType.Random;
+    public eTankType selectedTankType = eTankType.Random;
+
     Lobby _joinedLobby;
 
     string _playerName;
@@ -418,6 +421,7 @@ public class LobbyManager : MonoBehaviour
             CancelInvoke(nameof(MaintainLobby));
             CancelInvoke(nameof(RefreshPlayers));
             Invoke(nameof(LoadGameScene), _checkLobbyTime);
+            NetworkPlayerData.SetGameInfo(selectedMapType, selectedTankType);
             _joinedLobby = null;
         }
         catch (LobbyServiceException ex)
@@ -582,6 +586,7 @@ public class LobbyManager : MonoBehaviour
         loadingUI.SetActive(true);
         JoinRelay(joinCode);
         CancelInvoke(nameof(RefreshPlayers));
+        NetworkPlayerData.SetGameInfo(selectedMapType, selectedTankType);
         _joinedLobby = null;
     }
 

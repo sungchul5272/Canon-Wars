@@ -31,9 +31,6 @@ public class MainLobbyUI : MonoBehaviour
 
     List<PlayerSlotUI> _playerSlots = new();
 
-    public eMapType _selectMapType = eMapType.Random;
-    public eTankType _selectTankType = eTankType.Random;
-
     private bool _isInitTankSelect = false;
 
     void Start()
@@ -119,7 +116,7 @@ public class MainLobbyUI : MonoBehaviour
     private void SetMap(bool isLobbyHost)
     {
         // 맵 초기화
-        _selectMapType = eMapType.Random;
+        LobbyManager.Instance.selectedMapType = eMapType.Random;
 
         // 위치 초기화
         _contentMap.offsetMin = new Vector2(0, -256f);
@@ -136,8 +133,8 @@ public class MainLobbyUI : MonoBehaviour
         LobbyManager instance = LobbyManager.Instance;
 
         // 맵
-        int nextIndex = (int)_selectMapType - 1;
-        _selectMapType = (eMapType)nextIndex;
+        int nextIndex = (int)instance.selectedMapType - 1;
+        instance.selectedMapType = (eMapType)nextIndex;
 
         // 위치
         float moveX = _contentMap.offsetMin.x + 512f;
@@ -150,7 +147,7 @@ public class MainLobbyUI : MonoBehaviour
         _btnMapRight.gameObject.SetActive(instance.IsLobbyHost);
 
         // 이름
-        _txtMapName.text = _selectMapType.ToString();
+        _txtMapName.text = instance.selectedMapType.ToString();
 
         // 변경 반영
         GetSelectMapType();
@@ -160,8 +157,8 @@ public class MainLobbyUI : MonoBehaviour
     {
         LobbyManager instance = LobbyManager.Instance;
 
-        int nextIndex = (int)_selectMapType + 1;
-        _selectMapType = (eMapType)nextIndex;
+        int nextIndex = (int)instance.selectedMapType + 1;
+        instance.selectedMapType = (eMapType)nextIndex;
 
         float moveX = _contentMap.offsetMin.x - 512f;
         _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
@@ -171,7 +168,7 @@ public class MainLobbyUI : MonoBehaviour
         bool isRightEnd = moveX <= -2560f ? true : false;
         _btnMapRight.gameObject.SetActive(instance.IsLobbyHost && !isRightEnd);
 
-        _txtMapName.text = _selectMapType.ToString();
+        _txtMapName.text = instance.selectedMapType.ToString();
 
         // 변경 반영
         GetSelectMapType();
@@ -181,7 +178,7 @@ public class MainLobbyUI : MonoBehaviour
     private void SetSelectTank()
     {
         _tankSelectPrefab.gameObject.SetActive(false);
-        _selectTankType = eTankType.Random;
+        LobbyManager.Instance.selectedTankType = eTankType.Random;
 
         if (_isInitTankSelect == false)
         {
@@ -272,22 +269,25 @@ public class MainLobbyUI : MonoBehaviour
 
     private void GetSelectTankType(eTankType tankType)
     {
-        _selectTankType = tankType;
-        LobbyManager.Instance.ChangeTank(_selectTankType);
+        LobbyManager instance = LobbyManager.Instance;
+        instance.selectedTankType = tankType;
+        instance.ChangeTank(instance.selectedTankType);
     }
 
     private void GetSelectMapType()
     {
-        LobbyManager.Instance.ChangeMap(_selectMapType);
+        LobbyManager instance = LobbyManager.Instance;
+        instance.ChangeMap(instance.selectedMapType);
     }
 
     public void ShowSelectedMap(eMapType mapType)
     {
-        _selectMapType = mapType;
+        LobbyManager instance = LobbyManager.Instance;
+        instance.selectedMapType = mapType;
 
-        float moveX = -512f * ((int)_selectMapType + 1);
+        float moveX = -512f * ((int)instance.selectedMapType + 1);
         _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
 
-        _txtMapName.text = _selectMapType.ToString();
+        _txtMapName.text = instance.selectedMapType.ToString();
     }
 }

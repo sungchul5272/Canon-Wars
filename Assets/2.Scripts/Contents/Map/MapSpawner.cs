@@ -11,17 +11,17 @@ public class MapSpawner : MonoBehaviour
     private Ground _selectedGround = null;
     private int _seletedMapIndex = 0;
 
-    public void SpawnSelectMap(int randomIndex) //eMapType eSelectMap)
+    public void SpawnSelectMap(int mapIndex)
     {
         _curMap = null;
 
-        _seletedMapIndex = randomIndex;
-
-        // 맵 데이터를 통해서 생성
+        // 맵 인덱스를 통해서 생성
+        _seletedMapIndex = mapIndex;
         _curMap = _mapDataList[_seletedMapIndex];
 
         // 후경 생성
         Instantiate(_curMap.backgroundPrefab);
+
         // 전경 생성
         GameObject goFore = Instantiate(_curMap.foregroundPrefab);
 

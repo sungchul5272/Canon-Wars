@@ -22,7 +22,7 @@ public class GameInitializer : NetworkBehaviour
     [SerializeField] private eMapType _selectedMapType = eMapType.Random;
 
     [Header("인게임 UI")]
-    [SerializeField] GameObject _ingameUI;
+    [SerializeField] IngameUIController _ingameUI;
 
     public Transform CurShellTrans { get; set; }
     public CameraController _camController { get; private set; }
@@ -37,6 +37,7 @@ public class GameInitializer : NetworkBehaviour
         if (Instance == null)
             Instance = this;
 
+        _ingameUI.Init();
         _camController = Camera.main.GetComponent<CameraController>();
     }
 
@@ -49,11 +50,8 @@ public class GameInitializer : NetworkBehaviour
 
         if (IsClient)
         {
-            SetMyInfoUI(FirebaseManager._instance.userVO.NickName, FirebaseManager._instance.userVO.NowTank);
-            ReportPlayerInfoServerRpc(
-                FirebaseManager._instance.userVO.NickName,
-                FirebaseManager._instance.userVO.NowTank
-            );
+            SetMyInfoUI(FirebaseManager._instance.userVO.NickName, nameof(NetworkPlayerData.selectedTank));
+            ReportPlayerInfoServerRpc(FirebaseManager._instance.userVO.NickName, nameof(NetworkPlayerData.selectedTank));
 
             _loadingUI.SetActive(true);
         }
@@ -70,12 +68,30 @@ public class GameInitializer : NetworkBehaviour
             yield return new WaitForSeconds(0.5f);
 
             // 생성할 맵 결정
-            _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
+            if (NetworkPlayerData.selectedMapType == eMapType.Random)
+            {
+                _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
+            }
+            else
+            {
+                _netMapIndex.Value = (int)NetworkPlayerData.selectedMapType;
+            }
+
+            // 맵 생성
+            _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
             Debug.Log("[GameInitializer] 맵 생성 완료");
         }
+        else
+        {
+            // 맵이 정해질 때까지 대기
+            while(_netMapIndex.Value < 0)
+            {
+                yield return null;
+            }
 
-        // 맵 생성
-        _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+            // 맵 생성
+            _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+        }
 
         if (IsServer)
         {
@@ -204,6 +220,6 @@ public class GameInitializer : NetworkBehaviour
         _loadingUI.SetActive(false);
         Debug.Log("[GameInitializer] 초기화 완료! 로딩 UI 닫기");
 
-        _ingameUI.SetActive(true);
+        _ingameUI.gameObject.SetActive(true);
     }
 }

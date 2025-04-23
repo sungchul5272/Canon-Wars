@@ -16,7 +16,7 @@ public class IngameUIController : MonoBehaviour
     [SerializeField] private GameObject _firstMissile;
     [SerializeField] private GameObject _secondMissile;
 
-    void Awake()
+    public void Init()
     {
         if (Instance == null)
             Instance = this;

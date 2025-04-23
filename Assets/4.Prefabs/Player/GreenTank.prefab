@@ -213,6 +213,8 @@ MonoBehaviour:
   _srBody: {fileID: 4989927179726028549}
   _srWheel: {fileID: 4988939844198629521}
   _srAritllery: {fileID: 8695886562000290391}
+  _hp:
+    m_InternalValue: 100
 --- !u!1 &3762474273888376756
 GameObject:
   m_ObjectHideFlags: 0
@@ -315,7 +317,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -336,7 +338,7 @@ MonoBehaviour:
   UseHalfFloatPrecision: 0
   InLocalSpace: 0
   SwitchTransformSpaceWhenParented: 0
-  Interpolate: 1
+  Interpolate: 0
   SlerpPosition: 0
 --- !u!1 &4448875809951652664
 GameObject:
