@@ -159,7 +159,6 @@ public class Shell : NetworkBehaviour
                 {
                     player.ApplyLocalDamage(20);
 
-                    player.BroadcastHPToOthersClientRpc(player.GetCurrentHP());
                 }
             }
 

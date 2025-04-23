@@ -4,6 +4,8 @@ using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.UI;
+using static UnityEngine.Rendering.DebugUI;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -41,6 +43,11 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private SpriteRenderer _srWheel = null;
     [SerializeField] private SpriteRenderer _srAritllery = null;
 
+    [Header("UI")]
+    [SerializeField] GameObject _turnMark;
+    [SerializeField] Text _playerNickName;
+    [SerializeField] Slider _playerHpBar;
+
     private Rigidbody2D _rb2D = null;               // Tank RigidBody 2D
     private CircleCollider2D _colider2D = null;     // Tank CircleCollider 2D
     private GameObject _curShell = null;            // 현재 선택된 포탄    
@@ -71,6 +78,11 @@ public class PlayerController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         Init();
+
+        _hp.OnValueChanged += (oldVal, newVal) =>
+        {
+            _playerHpBar.value = Mathf.Clamp(newVal, 0, 100);
+        };
 
     }
 
@@ -522,6 +534,7 @@ public class PlayerController : NetworkBehaviour
         if (IsOwner)
         {
             IngameUIController.Instance.SetHP(_hp.Value);
+            BroadcastHPToOthersClientRpc(_hp.Value);
         }
 
         if (_hp.Value <= 0)
@@ -536,12 +549,18 @@ public class PlayerController : NetworkBehaviour
     {
         if (!IsOwner)
         {
-            //여기서 상대 HP를 가지고와서 상대 체력 UI 조정 예정
+            _playerHpBar.value = Mathf.Clamp(hp, 0, 100);
         }
     }
 
     public int GetCurrentHP()
     {
         return _hp.Value;
+    }
+
+    public void SetTurnMarkVisible(bool visible)
+    {
+        if (_turnMark != null)
+            _turnMark.SetActive(visible);
     }
 }

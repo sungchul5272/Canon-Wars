@@ -171,6 +171,12 @@ public class IngameManager : NetworkBehaviour
     public void FindCurrentTurnPlayerClientRpc(int turnIndex)
     {
         ulong clientId = NetworkManager.LocalClientId;
+
+        foreach (PlayerController player in FindObjectsOfType<PlayerController>())
+        {
+            bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
+            player.SetTurnMarkVisible(isCurrentTurn);
+        }
         if ((ulong)turnIndex == clientId)
         {
             Debug.Log($"³ªÀÇ ÅÏ.");
