@@ -29,9 +29,7 @@ public class InfoPanel : MonoBehaviour
 
     void Start()
     {
-        _fm = FirebaseManager._instance;
-        string tankKey = "GreenTank";
-        _equippedTankImage.sprite = TankUtil.GetTankSprite(tankKey);
+
 
 
         _applyBtn.onClick.AddListener(OnClickApply);

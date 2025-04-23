@@ -51,13 +51,13 @@ public class IngameUIController : MonoBehaviour
     // 체력 업데이트
     public void SetHP(float value)
     {
-        _hpBar.value = Mathf.Clamp01(value);
+        _hpBar.value = Mathf.Clamp(value, 0, 100);
     }
 
     // 연료 업데이트
     public void SetFuel(float value)
     {
-        _fuelBar.value = Mathf.Clamp01(value);
+        _fuelBar.value = Mathf.Clamp(value, 0, 100);
     }
 
     // 바람 세기 및 방향 표시

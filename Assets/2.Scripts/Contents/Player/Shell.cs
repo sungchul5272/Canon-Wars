@@ -26,6 +26,7 @@ public class Shell : NetworkBehaviour
     protected BoxCollider2D _collider2D = null;
     private NetworkObject _networkObject = null;
 
+    private int _damage = 20;
     private float _endTime = 0f;
     private float _power = 1f;
     private float _curWindForce = 0f;
@@ -132,6 +133,8 @@ public class Shell : NetworkBehaviour
         }
     }
 
+
+ 
     [ClientRpc]
     private void CheckExplosionClientRpc(Vector2 colliderCenter)
     {
@@ -147,7 +150,20 @@ public class Shell : NetworkBehaviour
         if (hitPlayerList.Length > 0)
         {
             // 데미지 주기
-        }
+            foreach (var col in hitPlayerList)
+            {
+                var player = col.GetComponent<PlayerController>();
+
+                // 맞은 객체가 나인 경우에만 데미지 처리
+                if (player != null && player.IsOwner)
+                {
+                    player.ApplyLocalDamage(20);
+
+                    player.BroadcastHPToOthersClientRpc(player.GetCurrentHP());
+                }
+            }
+
+        }     
 
         if (hitGroundList.Length > 0)
         {
@@ -163,6 +179,8 @@ public class Shell : NetworkBehaviour
 
         ReleaseShell();
     }
+
+
 
     protected void ReleaseShell()
     {

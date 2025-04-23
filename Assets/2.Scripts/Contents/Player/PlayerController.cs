@@ -61,7 +61,7 @@ public class PlayerController : NetworkBehaviour
     private bool _isCanFire = false;
 
     private NetworkObject _curSpawnedShell;
-
+    public NetworkVariable<int> _hp = new(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private void Awake()
     {
         _rb2D = GetComponent<Rigidbody2D>();
@@ -71,6 +71,7 @@ public class PlayerController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         Init();
+
     }
 
     public void Init()
@@ -333,6 +334,10 @@ public class PlayerController : NetworkBehaviour
         if (_curFuel > 0f)
         {
             _curFuel -= Time.deltaTime * FUEL_USE_SPEED;
+            if (IsOwner)
+            {
+                IngameUIController.Instance.SetFuel(_curFuel);
+            }
         }
         else
         {
@@ -344,6 +349,7 @@ public class PlayerController : NetworkBehaviour
     public void FillFuel()
     {
         _curFuel = FULL_FUEL; ;
+        IngameUIController.Instance.SetFuel(_curFuel);
     }
 
 
@@ -540,5 +546,37 @@ public class PlayerController : NetworkBehaviour
         _srBody.sortingOrder += value;
         _srWheel.sortingOrder += value; 
         _srAritllery.sortingOrder += value;
+    }
+
+
+
+    public void ApplyLocalDamage(int dmg)
+    {
+        _hp.Value -= dmg;
+
+        if (IsOwner)
+        {
+            IngameUIController.Instance.SetHP(_hp.Value);
+        }
+
+        if (_hp.Value <= 0)
+        {
+            Debug.Log("사망");
+            gameObject.SetActive(false);
+        }
+    }
+
+    [ClientRpc]
+    public void BroadcastHPToOthersClientRpc(int hp, ClientRpcParams rpcParams = default)
+    {
+        if (!IsOwner)
+        {
+            //여기서 상대 HP를 가지고와서 상대 체력 UI 조정 예정
+        }
+    }
+
+    public int GetCurrentHP()
+    {
+        return _hp.Value;
     }
 }

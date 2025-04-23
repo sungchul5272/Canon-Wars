@@ -200,6 +200,8 @@ public class IngameManager : NetworkBehaviour
     private void RandomWindForce()
     {
         _curWindForce = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
+        Debug.Log(_curWindForce);
+        IngameUIController.Instance.SetWind(_curWindForce);
     }
 
     public float GetWindForce() => _curWindForce;
