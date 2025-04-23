@@ -45,7 +45,8 @@ public class MapSpawner : MonoBehaviour
     {
         if (_curMap== null)
         {
-            Debug.LogError("Cur map is null!");
+            Debug.LogWarning("Cur map is null!");
+            return Vector2.zero;
         }
 
         return _curMap.mapSize;

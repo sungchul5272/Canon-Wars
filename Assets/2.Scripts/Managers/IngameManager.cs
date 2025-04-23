@@ -200,7 +200,7 @@ public class IngameManager : NetworkBehaviour
     private void RandomWindForce()
     {
         _curWindForce = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
-        Debug.Log(_curWindForce);
+        Debug.Log($"바람 세기: {_curWindForce}");
         IngameUIController.Instance.SetWind(_curWindForce);
     }
 

@@ -32,6 +32,8 @@ public class GameInitializer : NetworkBehaviour
     private List<Vector3> _spawnPosList = new();
     private Dictionary<ulong, UserData> _clientUserData = new();
 
+    private ulong _clientId;
+
     void Awake()
     {
         if (Instance == null)
@@ -56,6 +58,7 @@ public class GameInitializer : NetworkBehaviour
             _loadingUI.SetActive(true);
         }
 
+        //NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         StartCoroutine(InitRoutine());
     }
 
@@ -93,12 +96,18 @@ public class GameInitializer : NetworkBehaviour
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
         }
 
-        if (IsServer)
-        {
-            // 플레이어 생성
-            SpawnPlayers();
-            Debug.Log("[GameInitializer] 탱크 생성 완료");
-        }
+        // 플레이어 생성
+        Debug.Log("플레이어 생성");
+        ulong clientId = (ulong)NetworkManager.Singleton.ConnectedClients.Count - 1;
+        SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
+        Debug.Log("[GameInitializer] 탱크 생성 완료");
+
+        //if (IsServer)
+        //{
+        //    // 플레이어 생성
+        //    SpawnPlayers();
+        //    Debug.Log("[GameInitializer] 탱크 생성 완료");
+        //}
 
         // 각자의 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
@@ -112,26 +121,28 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
-    private void SpawnPlayers()
-    {
-        if (!IsServer) return;
+    //private void SpawnPlayers()
+    //{
+    //    if (!IsServer) return;
 
+    //    _spawnPosList = _mapSpawner.GetSpawnPosPList();
+
+    //    foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+    //    {
+    //        SpawnEachPlayer(clientId);
+    //    }
+
+    //    NetworkManager.Singleton.OnClientConnectedCallback += SpawnEachPlayer;
+    //}
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
+    {
+        Debug.Log($"플레이어 ID: {clientId}.");
         _spawnPosList = _mapSpawner.GetSpawnPosPList();
-
-        foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            SpawnPlayer(clientId);
-        }
-
-        NetworkManager.Singleton.OnClientConnectedCallback += SpawnPlayer;
-        //NetworkManager.Singleton.ConnectedClients[0].name
-    }
-
-    private void SpawnPlayer(ulong clientId)
-    {
         if (_spawnPosList.Count == 0)
         {
-            Debug.LogWarning("[GameInitializer] 스폰 좌표가 부족합니다.");
+            Debug.LogError("[GameInitializer] 스폰 좌표가 부족합니다.");
             return;
         }
 
@@ -139,7 +150,8 @@ public class GameInitializer : NetworkBehaviour
         Vector3 spawnPos = _spawnPosList[randIndex];
         _spawnPosList.RemoveAt(randIndex);
 
-        GameObject tank = Instantiate(_tankPrefabList[0], spawnPos, Quaternion.identity);
+        int tankIndex = GetTankIndex(tankType);
+        GameObject tank = Instantiate(_tankPrefabList[tankIndex], spawnPos, Quaternion.identity);
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
         tank.name = $"Player {clientId}";
 
@@ -154,12 +166,86 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
+    //private void OnClientConnected(ulong clientId)
+    //{
+    //    if (IsServer)
+    //    {
+    //        SetClientId(clientId);
+    //    }
+    //}
+
+    //[ClientRpc]
+    //private void SetIdClientRpc(ulong clientId)
+    //{
+    //    _clientId = clientId;
+    //}
+
+    //private void SetClientId(ulong clientId)
+    //{
+    //    var rpcParams = new ClientRpcParams
+    //    {
+    //        Send = new ClientRpcSendParams
+    //        {
+    //            TargetClientIds = new ulong[] { clientId }
+    //        }
+    //    };
+
+    //    SetIdClientRpc(clientId, rpcParams);
+    //}
+
+    [ClientRpc]
+    private void SetIdClientRpc(ulong clientId, ClientRpcParams rpcParams = default)
+    {
+        _clientId = clientId;
+        Debug.Log($"클라이언트 ID: {_clientId}.");
+    }
+    //private void SpawnEachPlayer(ulong clientId)
+    //{
+    //    if (_spawnPosList.Count == 0)
+    //    {
+    //        Debug.LogWarning("[GameInitializer] 스폰 좌표가 부족합니다.");
+    //        return;
+    //    }
+
+    //    int randIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
+    //    Vector3 spawnPos = _spawnPosList[randIndex];
+    //    _spawnPosList.RemoveAt(randIndex);
+
+    //    int tankIndex = GetTankIndex();
+    //    GameObject tank = Instantiate(_tankPrefabList[tankIndex], spawnPos, Quaternion.identity);
+    //    tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+    //    tank.name = $"Player {clientId}";
+
+    //    var player = tank.GetComponent<PlayerController>();
+    //    if (player.transform.position.x > 0) player.Flip(-1);
+
+    //    Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
+
+    //    if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
+    //    {
+    //        IngameManager.Instance.SetStartTurnIndex();
+    //    }
+    //}
+
+    private int GetTankIndex(eTankType tankType)
+    {
+        // 탱크를 무작위로 한 경우
+        if (tankType == eTankType.Random)
+        {
+            // 0은 랜덤이므로 제외
+            return UnityEngine.Random.Range(1, (int)eTankType.Max);
+        }
+
+        return (int)tankType - 1;
+    }
+
     public Vector2 GetMapSize()
     {
         if (_mapSpawner == null)
         {
             return Vector2.zero;
         }
+
         return _mapSpawner.GetMapSize();
     }
 
