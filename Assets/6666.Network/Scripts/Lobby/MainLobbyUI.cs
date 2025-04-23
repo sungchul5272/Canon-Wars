@@ -19,7 +19,22 @@ public class MainLobbyUI : MonoBehaviour
     public Button kickedButton;
     public Button backButton;
 
+    [Header("Map")]
+    public RectTransform _contentMap = null;
+    public Button _btnMapLeft = null;
+    public Button _btnMapRight = null;
+    public TextMeshProUGUI _txtMapName = null;
+
+    [Header("Tank")]
+    public Transform _contentTank = null;
+    public ButtonTankSelect _tankSelectPrefab = null;
+
     List<PlayerSlotUI> _playerSlots = new();
+
+    public eMapType _selectMapType = eMapType.Random;
+    public eTankType _selectTankType = eTankType.Random;
+
+    private bool _isInitTankSelect = false;
 
     void Start()
     {
@@ -94,7 +109,94 @@ public class MainLobbyUI : MonoBehaviour
         lobbyCodeText.SetText(lobbyCode);
         playButton.gameObject.SetActive(instance.IsLobbyHost);
         readyToggle.gameObject.SetActive(!instance.IsLobbyHost);
+
+        SetMap(instance.IsLobbyHost);
+        SetSelectTank();
     }
+
+
+    // 맵 선택창 세팅
+    private void SetMap(bool isLobbyHost)
+    {
+        // 맵 초기화
+        _selectMapType = eMapType.Random;
+
+        // 위치 초기화
+        _contentMap.offsetMin = new Vector2(0, -256f);
+
+        _btnMapLeft.gameObject.SetActive(false);
+        _btnMapRight.gameObject.SetActive(isLobbyHost);
+
+        _btnMapLeft.onClick.AddListener(OnClick_MapLeft);
+        _btnMapRight.onClick.AddListener(OnClick_MapRight);
+    }
+
+    private void OnClick_MapLeft()
+    {
+        LobbyManager instance = LobbyManager.Instance;
+
+        // 맵
+        int nextIndex = (int)_selectMapType - 1;
+        _selectMapType = (eMapType)nextIndex;
+
+        // 위치
+        float moveX = _contentMap.offsetMin.x + 512f;
+        _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
+
+        // 호스트에게만 화살표 버튼이 나오도록 
+        bool isLeftEnd = moveX >= 0f ? true : false;
+        _btnMapLeft.gameObject.SetActive(instance.IsLobbyHost && !isLeftEnd);
+
+        _btnMapRight.gameObject.SetActive(instance.IsLobbyHost);
+
+        // 이름
+        _txtMapName.text = _selectMapType.ToString();
+
+        // 변경 반영
+        GetSelectMapType();
+    }
+
+    private void OnClick_MapRight()
+    {
+        LobbyManager instance = LobbyManager.Instance;
+
+        int nextIndex = (int)_selectMapType + 1;
+        _selectMapType = (eMapType)nextIndex;
+
+        float moveX = _contentMap.offsetMin.x - 512f;
+        _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
+
+        _btnMapLeft.gameObject.SetActive(instance.IsLobbyHost);
+
+        bool isRightEnd = moveX <= -2560f ? true : false;
+        _btnMapRight.gameObject.SetActive(instance.IsLobbyHost && !isRightEnd);
+
+        _txtMapName.text = _selectMapType.ToString();
+
+        // 변경 반영
+        GetSelectMapType();
+    }
+
+    // 탱크 선택창 세팅
+    private void SetSelectTank()
+    {
+        _tankSelectPrefab.gameObject.SetActive(false);
+        _selectTankType = eTankType.Random;
+
+        if (_isInitTankSelect == false)
+        {
+            for (int i = 0; i < (int)eTankType.Max; i++)
+            {
+                ButtonTankSelect btnTankSelect = Instantiate(_tankSelectPrefab, _contentTank);
+                btnTankSelect.gameObject.SetActive(true);
+
+                btnTankSelect.Set((eTankType)i, GetSelectTankType);
+            }
+
+            _isInitTankSelect = true;
+        }
+    }
+
 
     public void LeaveMainLobbyUI()
     {
@@ -165,5 +267,27 @@ public class MainLobbyUI : MonoBehaviour
         playerSlot.gameObject.SetActive(true);
         playerSlot.ShowPlayerNameUI(instance.LobbyPlayerDatas[i].name);
         playerSlot.ShowReadyUI(instance.LobbyPlayerDatas[i].ready);
+        playerSlot.ShowPlayerTank(instance.LobbyPlayerDatas[i].selectedTank);
+    }
+
+    private void GetSelectTankType(eTankType tankType)
+    {
+        _selectTankType = tankType;
+        LobbyManager.Instance.ChangeTank(_selectTankType);
+    }
+
+    private void GetSelectMapType()
+    {
+        LobbyManager.Instance.ChangeMap(_selectMapType);
+    }
+
+    public void ShowSelectedMap(eMapType mapType)
+    {
+        _selectMapType = mapType;
+
+        float moveX = -512f * ((int)_selectMapType + 1);
+        _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
+
+        _txtMapName.text = _selectMapType.ToString();
     }
 }

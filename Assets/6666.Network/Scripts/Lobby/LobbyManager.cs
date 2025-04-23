@@ -50,12 +50,16 @@ public class LobbyManager : MonoBehaviour
     string _playerName;
     string _playerNameDataKey = "PlayerName";
     string _playerReadyDataKey = "PlayerReady";
+    string _playerSelectTankDataKey = "PlayerSelectTank";       // 선택한 탱크
     string _gameModeDataKey = "GameMode";
     string _gameStartDataKey = "GameStart";
+    string _gameMapDataKey = "SelectMap";                       // 선택한 맵
     string _lobbyNotFoundError = "lobby not found";
     float _maintainLobbyTime = 20;
     float _checkLobbyTime = 1.1f;
     bool _isGameStart;
+
+    eMapType _lastMapType = eMapType.Random;
 
     void Awake()
     {
@@ -144,7 +148,9 @@ public class LobbyManager : MonoBehaviour
                     { _gameModeDataKey, new DataObject(DataObject.VisibilityOptions.Public, gameMode.ToString(), DataObject.IndexOptions.S1) },
 
                     // 로비 멤버에게만 게임 시작 여부 공개
-                    { _gameStartDataKey, new DataObject(DataObject.VisibilityOptions.Member, "0") }
+                    { _gameStartDataKey, new DataObject(DataObject.VisibilityOptions.Member, "0") },
+
+                    {_gameMapDataKey,  new DataObject(DataObject.VisibilityOptions.Member, eMapType.Random.ToString()) },
                 }
             });
 
@@ -186,11 +192,15 @@ public class LobbyManager : MonoBehaviour
             {
                 // 로비 정보 저장
                 Lobby lobby = queryResponse.Results[i];
+                eMapType mayType = lobby.Data.ContainsKey(_gameMapDataKey) ? 
+                    (eMapType)System.Enum.Parse(typeof(eMapType), lobby.Data[_gameMapDataKey].Value) : eMapType.Random;
+
                 PublicLobbyDatas.Add(new LobbyData
                 {
                     id = lobby.Id,
                     name = lobby.Name,
                     gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), lobby.Data[_gameModeDataKey].Value),
+                    selectedMap = mayType,
                 });
 
                 Debug.Log($"Lobbies found:{lobby.Name}, Mode: {lobby.Data[_gameModeDataKey].Value}.");
@@ -340,6 +350,53 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    // 탱크 바꾼 상태 보여주기
+    public async void ChangeTank(eTankType value)
+    {
+        // 준비
+        try
+        {
+            _joinedLobby = await LobbyService.Instance.UpdatePlayerAsync(_joinedLobby.Id, AuthenticationService.Instance.PlayerId, new UpdatePlayerOptions
+            {
+                Data = new Dictionary<string, PlayerDataObject>
+                {
+                    // 로비 멤버에게만 탱크 상태 보여주기
+                    { _playerSelectTankDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, value.ToString()) }
+                }
+            });
+
+            Debug.Log($"SelectTank : {value}");
+        }
+        catch (LobbyServiceException ex)
+        {
+            Debug.LogError(ex.Message);
+        }
+    }
+
+    // 맵 변경 보여주기
+    public async void ChangeMap(eMapType selectedMap)
+    {
+        if (!IsLobbyHost || _joinedLobby == null)
+            return;
+
+        try
+        {
+            _joinedLobby = await LobbyService.Instance.UpdateLobbyAsync(_joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                      { _gameMapDataKey, new DataObject(DataObject.VisibilityOptions.Member, selectedMap.ToString()) }
+                }
+            });
+
+            Debug.Log($"Map changed to: {selectedMap}");
+        }
+        catch (LobbyServiceException ex)
+        {
+            Debug.LogError(ex.Message);
+        }
+    }
+
     public async void StartGameAsHost()
     {
         // 호스트로 게임 시작
@@ -381,6 +438,18 @@ public class LobbyManager : MonoBehaviour
         try
         {
             _joinedLobby = await LobbyService.Instance.GetLobbyAsync(_joinedLobby.Id);
+
+            // 맵 갱신
+            if (_joinedLobby.Data.TryGetValue(_gameMapDataKey, out var mapData))
+            {
+                var selectedMap = (eMapType)System.Enum.Parse(typeof(eMapType), mapData.Value);
+              
+                if (!IsLobbyHost) //  호스트가 아닌경우에만 맵 변경 보여주기
+                {
+                    mainLobbyUI.ShowSelectedMap(selectedMap);
+                    _lastMapType = selectedMap;
+                }
+            }
         }
         catch (LobbyServiceException ex)
         {
@@ -398,6 +467,7 @@ public class LobbyManager : MonoBehaviour
                 Debug.LogError(ex.Message);
             }
         }
+
 
         // 추방된 경우
         if (_joinedLobby.Players[0].Data == null)
@@ -417,10 +487,14 @@ public class LobbyManager : MonoBehaviour
         {
             // 이름과 준비 상태 갱신
             bool playerReady = _joinedLobby.Players[i].Data[_playerReadyDataKey].Value.Equals("1");
+
+            // 선택한 탱크 보여주기
+            eTankType selectedTank = (eTankType)System.Enum.Parse(typeof(eTankType) ,_joinedLobby.Players[i].Data[_playerSelectTankDataKey].Value);
             LobbyPlayerDatas.Add(new PlayerData
             {
                 name = _joinedLobby.Players[i].Data[_playerNameDataKey].Value,
-                ready = playerReady
+                ready = playerReady,
+                selectedTank  = selectedTank,
             });
 
             // 모든 플레이어가 준비되었는지 확인
@@ -527,7 +601,10 @@ public class LobbyManager : MonoBehaviour
                 { _playerNameDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, _playerName) },
 
                 // 로비 멤버에게만 준비 상태 공개
-                { _playerReadyDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, isHost? "1" : "0") }
+                { _playerReadyDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, isHost? "1" : "0") },
+
+                // 선택한 탱크 보여주기
+                {_playerSelectTankDataKey,  new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, eTankType.Random.ToString()) },
             },
         };
     }
@@ -537,11 +614,17 @@ public class LobbyManager : MonoBehaviour
         public string id;
         public string name;
         public EGameMode gameMode;
+
+        // 맵선택
+        public eMapType selectedMap;
     }
 
     public class PlayerData
     {
         public string name;
         public bool ready;
+
+        // 탱크 선택
+        public eTankType selectedTank;
     }
 }

@@ -1,4 +1,5 @@
 using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,10 @@ public class PlayerSlotUI : MonoBehaviour
     public Toggle readyToggle;
     public Button profileButton;
     public Button kickButton;
+
+    [Header("Tank")]
+    public Image _imgSelectTank = null;
+    public List<Sprite> _spriteTankList = new List<Sprite>();
 
     void OnEnable()
     {
@@ -47,5 +52,10 @@ public class PlayerSlotUI : MonoBehaviour
     public void HideKickButtonUI()
     {
         kickButton.gameObject.SetActive(false);
+    }
+
+    public void ShowPlayerTank(eTankType selectTankType)
+    {
+        _imgSelectTank.sprite = _spriteTankList[(int)selectTankType];
     }
 }
