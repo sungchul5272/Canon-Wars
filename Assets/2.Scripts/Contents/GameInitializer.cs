@@ -101,13 +101,6 @@ public class GameInitializer : NetworkBehaviour
         SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
 
-        //if (IsServer)
-        //{
-        //    // 플레이어 생성
-        //    SpawnPlayers();
-        //    Debug.Log("[GameInitializer] 탱크 생성 완료");
-        //}
-
         // 각자의 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
         _camController?.Init();
@@ -120,24 +113,14 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
-    //private void SpawnPlayers()
-    //{
-    //    if (!IsServer) return;
-
-    //    _spawnPosList = _mapSpawner.GetSpawnPosPList();
-
-    //    foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-    //    {
-    //        SpawnEachPlayer(clientId);
-    //    }
-
-    //    NetworkManager.Singleton.OnClientConnectedCallback += SpawnEachPlayer;
-    //}
-
     [ServerRpc(RequireOwnership = false)]
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
-        Debug.Log($"플레이어 ID: {clientId}.");
+        if (!IsServer)
+        {
+            return;
+        }
+
         _spawnPosList = _mapSpawner.GetSpawnPosPList();
         if (_spawnPosList.Count == 0)
         {
@@ -149,7 +132,7 @@ public class GameInitializer : NetworkBehaviour
         Vector3 spawnPos = _spawnPosList[randIndex];
         _spawnPosList.RemoveAt(randIndex);
 
-        //int tankIndex = GetTankIndex(tankType);
+        Debug.Log($"남은 스폰 위치 수: {_spawnPosList.Count}.");
 
         // 탱크 데이터 불러와서 인스턴스
         TankDataSO tankData = SODataManager.instance.GetTankData(tankType);
@@ -169,79 +152,6 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
-    //private void OnClientConnected(ulong clientId)
-    //{
-    //    if (IsServer)
-    //    {
-    //        SetClientId(clientId);
-    //    }
-    //}
-
-    //[ClientRpc]
-    //private void SetIdClientRpc(ulong clientId)
-    //{
-    //    _clientId = clientId;
-    //}
-
-    //private void SetClientId(ulong clientId)
-    //{
-    //    var rpcParams = new ClientRpcParams
-    //    {
-    //        Send = new ClientRpcSendParams
-    //        {
-    //            TargetClientIds = new ulong[] { clientId }
-    //        }
-    //    };
-
-    //    SetIdClientRpc(clientId, rpcParams);
-    //}
-
-    [ClientRpc]
-    private void SetIdClientRpc(ulong clientId, ClientRpcParams rpcParams = default)
-    {
-        _clientId = clientId;
-        Debug.Log($"클라이언트 ID: {_clientId}.");
-    }
-    //private void SpawnEachPlayer(ulong clientId)
-    //{
-    //    if (_spawnPosList.Count == 0)
-    //    {
-    //        Debug.LogWarning("[GameInitializer] 스폰 좌표가 부족합니다.");
-    //        return;
-    //    }
-
-    //    int randIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
-    //    Vector3 spawnPos = _spawnPosList[randIndex];
-    //    _spawnPosList.RemoveAt(randIndex);
-
-    //    int tankIndex = GetTankIndex();
-    //    GameObject tank = Instantiate(_tankPrefabList[tankIndex], spawnPos, Quaternion.identity);
-    //    tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-    //    tank.name = $"Player {clientId}";
-
-    //    var player = tank.GetComponent<PlayerController>();
-    //    if (player.transform.position.x > 0) player.Flip(-1);
-
-    //    Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
-
-    //    if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
-    //    {
-    //        IngameManager.Instance.SetStartTurnIndex();
-    //    }
-    //}
-
-    //private int GetTankIndex(eTankType tankType)
-    //{
-    //    // 탱크를 무작위로 한 경우
-    //    if (tankType == eTankType.Random)
-    //    {
-    //        // 0은 랜덤이므로 제외
-    //        return UnityEngine.Random.Range(1, (int)eTankType.Max);
-    //    }
-
-    //    return (int)tankType - 1;
-    //}
-
     public Vector2 GetMapSize()
     {
         if (_mapSpawner == null)
@@ -251,8 +161,6 @@ public class GameInitializer : NetworkBehaviour
 
         return _mapSpawner.GetMapSize();
     }
-
-
 
     [ServerRpc(RequireOwnership = false)]
     public void ReportPlayerInfoServerRpc(string nick, string tankKey, ServerRpcParams rpcParams = default)
