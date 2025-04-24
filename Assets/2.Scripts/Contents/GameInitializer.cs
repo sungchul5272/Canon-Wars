@@ -31,6 +31,10 @@ public class GameInitializer : NetworkBehaviour
     private List<Vector3> _spawnPosList = new();
     private Dictionary<ulong, UserData> _clientUserData = new();
 
+    // 맵 생성 여부 확인
+    private NetworkList<bool> _mapLoadComplete = new (new List<bool>(),NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
+    private bool _bWaitAllComplete = false;
+
     private ulong _clientId;
 
     void Awake()
@@ -48,6 +52,21 @@ public class GameInitializer : NetworkBehaviour
         {
             Debug.Log($"[GameInitializer] 맵 인덱스 변경: {prev} → {next}");
         };
+        
+        // 변화 확인
+        _mapLoadComplete.OnListChanged += (NetworkListEvent<bool> changeEvent) =>
+        {
+            _bWaitAllComplete = true;
+
+            for(int i =0; i < _mapLoadComplete.Count; i++)
+            {
+                if (_mapLoadComplete[i] == false)
+                {
+                    _bWaitAllComplete = false;
+                    break;
+                }
+            }
+        };
 
         if (IsClient)
         {
@@ -63,8 +82,15 @@ public class GameInitializer : NetworkBehaviour
 
     private IEnumerator InitRoutine()
     {
+        ulong clientId = (ulong)NetworkManager.Singleton.ConnectedClients.Count - 1;
+
         if (IsServer)
         {
+            for (int i =0; i < NetworkManager.Singleton.ConnectedClients.Count; i++)
+            {
+                _mapLoadComplete.Add(false);
+            }
+
             Debug.Log("[GameInitializer] InitRoutine 시작");
 
             yield return new WaitForSeconds(0.5f);
@@ -81,6 +107,8 @@ public class GameInitializer : NetworkBehaviour
 
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+            // 맵 로드 완료
+            ReportMapLoadedServerRpc(clientId);
             Debug.Log("[GameInitializer] 맵 생성 완료");
         }
         else
@@ -93,11 +121,21 @@ public class GameInitializer : NetworkBehaviour
 
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+
+            // 맵 로드 완료
+            ReportMapLoadedServerRpc(clientId);
         }
+
+        // 모든 플레이어 맵 로드 대기
+        while (!_bWaitAllComplete)
+        {
+            yield return null;
+        }
+
+        Debug.Log("모든 유저 맵 로딩 완료");
 
         // 플레이어 생성
         Debug.Log("플레이어 생성");
-        ulong clientId = (ulong)NetworkManager.Singleton.ConnectedClients.Count - 1;
         SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
 
@@ -111,6 +149,12 @@ public class GameInitializer : NetworkBehaviour
             yield return new WaitForSeconds(5f);
             CloseLoadingUIClientRpc();
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ReportMapLoadedServerRpc(ulong clientId)
+    {
+        _mapLoadComplete[(int)clientId] = true; // 서버에서 직접 수정
     }
 
     [ServerRpc(RequireOwnership = false)]
