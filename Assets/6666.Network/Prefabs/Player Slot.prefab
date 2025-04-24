@@ -580,10 +580,7 @@ MonoBehaviour:
   profileButton: {fileID: 4419814044377369328}
   kickButton: {fileID: 3819935139006007275}
   _imgSelectTank: {fileID: 1084983953459427003}
-  _spriteTankList:
-  - {fileID: 21300000, guid: 413c0efc113ac6340966129e60370f82, type: 3}
-  - {fileID: 21300000, guid: d222fbffff4ccf3469a85a25ee21995f, type: 3}
-  - {fileID: 21300000, guid: babc2378eddd51243a4ffd2dfd47047e, type: 3}
+  _spriteRandom: {fileID: 21300000, guid: 413c0efc113ac6340966129e60370f82, type: 3}
 --- !u!1 &6508305106106391110
 GameObject:
   m_ObjectHideFlags: 0

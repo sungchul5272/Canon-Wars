@@ -21,6 +21,7 @@ public class MainLobbyUI : MonoBehaviour
 
     [Header("Map")]
     public RectTransform _contentMap = null;
+    public Image _imgMap = null;
     public Button _btnMapLeft = null;
     public Button _btnMapRight = null;
     public TextMeshProUGUI _txtMapName = null;
@@ -31,6 +32,7 @@ public class MainLobbyUI : MonoBehaviour
 
     List<PlayerSlotUI> _playerSlots = new();
 
+    private bool _isInitMapSelect = false;
     private bool _isInitTankSelect = false;
 
     void Start()
@@ -121,6 +123,18 @@ public class MainLobbyUI : MonoBehaviour
         // 위치 초기화
         _contentMap.offsetMin = new Vector2(0, -256f);
 
+        // 맵 이미지 인스턴스
+        if (_isInitMapSelect == false)
+        {
+            _isInitMapSelect = true;
+
+            for (int i = (int)eMapType.Valley; i < (int)eMapType.Max; i++)
+            {
+                Image img = Instantiate(_imgMap, _contentMap);
+                img.sprite = SODataManager.instance.GetMapData((eMapType)i)._mapSprite;
+            }
+        }
+
         _btnMapLeft.gameObject.SetActive(false);
         _btnMapRight.gameObject.SetActive(isLobbyHost);
 
@@ -182,7 +196,7 @@ public class MainLobbyUI : MonoBehaviour
 
         if (_isInitTankSelect == false)
         {
-            for (int i = 0; i < (int)eTankType.Max; i++)
+            for (int i = (int)eMapType.Random; i < (int)eTankType.Max; i++)
             {
                 ButtonTankSelect btnTankSelect = Instantiate(_tankSelectPrefab, _contentTank);
                 btnTankSelect.gameObject.SetActive(true);

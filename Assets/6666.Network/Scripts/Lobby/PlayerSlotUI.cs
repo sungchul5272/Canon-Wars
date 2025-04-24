@@ -13,7 +13,7 @@ public class PlayerSlotUI : MonoBehaviour
 
     [Header("Tank")]
     public Image _imgSelectTank = null;
-    public List<Sprite> _spriteTankList = new List<Sprite>();
+    public Sprite _spriteRandom = null;
 
     void OnEnable()
     {
@@ -56,6 +56,7 @@ public class PlayerSlotUI : MonoBehaviour
 
     public void ShowPlayerTank(eTankType selectTankType)
     {
-        _imgSelectTank.sprite = _spriteTankList[(int)selectTankType];
+        TankDataSO tankData = SODataManager.instance.GetTankData(selectTankType);
+        _imgSelectTank.sprite = tankData == null ? _spriteRandom : tankData._tankSprite;
     }
 }

@@ -1,9 +1,18 @@
 using UnityEngine;
 
+public enum eTankType
+{
+    Random = -1,
+    Green,
+    Yellow,
+    Max
+}
+
 [CreateAssetMenu(fileName = "TankData", menuName = "Tank/Tank Data", order = 1)]
 public class TankDataSO : ScriptableObject
 {
     [Header("±âº» ÅÊÅ© Á¤º¸")]
+    public eTankType _tankType = eTankType.Random;
     public string _tankName;         // ÅÊÅ© ÀÌ¸§
     public int _hp;              // Ã¼·Â
     public int _atk;              // °ø°Ý·Â
@@ -11,5 +20,8 @@ public class TankDataSO : ScriptableObject
 
     [Header("ÅÊÅ© ÀÌ¹ÌÁö")]
     public Sprite _tankSprite;       // ÅÊÅ© º»Ã¼ ÀÌ¹ÌÁö
+
+    [Header("ÅÊÅ© ÇÁ¸®ÆÕ")]
+    public GameObject _tankPrefab; // ÅÊÅ© ÇÁ¸®ÆÕ
 
 }

@@ -16,9 +16,8 @@ public class GameInitializer : NetworkBehaviour
     [SerializeField] Text _enemyNickText;
     [SerializeField] Image _enemyTankImage;
 
-    [Header("맵 및 탱크 프리팹")]
+    [Header("맵 스포너")]
     [SerializeField] private MapSpawner _mapSpawner;
-    [SerializeField] private List<GameObject> _tankPrefabList;
     [SerializeField] private eMapType _selectedMapType = eMapType.Random;
 
     [Header("인게임 UI")]
@@ -150,8 +149,12 @@ public class GameInitializer : NetworkBehaviour
         Vector3 spawnPos = _spawnPosList[randIndex];
         _spawnPosList.RemoveAt(randIndex);
 
-        int tankIndex = GetTankIndex(tankType);
-        GameObject tank = Instantiate(_tankPrefabList[tankIndex], spawnPos, Quaternion.identity);
+        //int tankIndex = GetTankIndex(tankType);
+
+        // 탱크 데이터 불러와서 인스턴스
+        TankDataSO tankData = SODataManager.instance.GetTankData(tankType);
+        GameObject tank = Instantiate(tankData._tankPrefab, spawnPos, Quaternion.identity);
+
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
         tank.name = $"Player {clientId}";
 
@@ -227,17 +230,17 @@ public class GameInitializer : NetworkBehaviour
     //    }
     //}
 
-    private int GetTankIndex(eTankType tankType)
-    {
-        // 탱크를 무작위로 한 경우
-        if (tankType == eTankType.Random)
-        {
-            // 0은 랜덤이므로 제외
-            return UnityEngine.Random.Range(1, (int)eTankType.Max);
-        }
+    //private int GetTankIndex(eTankType tankType)
+    //{
+    //    // 탱크를 무작위로 한 경우
+    //    if (tankType == eTankType.Random)
+    //    {
+    //        // 0은 랜덤이므로 제외
+    //        return UnityEngine.Random.Range(1, (int)eTankType.Max);
+    //    }
 
-        return (int)tankType - 1;
-    }
+    //    return (int)tankType - 1;
+    //}
 
     public Vector2 GetMapSize()
     {

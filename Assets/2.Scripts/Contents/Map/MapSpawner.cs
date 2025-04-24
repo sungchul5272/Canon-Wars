@@ -4,9 +4,6 @@ using UnityEngine;
 
 public class MapSpawner : MonoBehaviour
 {
-    [Header("Map Data List")]
-    [SerializeField] private List<MapData> _mapDataList = new List<MapData>();
-
     private MapData _curMap = null;
     private Ground _selectedGround = null;
     private int _seletedMapIndex = 0;
@@ -17,7 +14,7 @@ public class MapSpawner : MonoBehaviour
 
         // 맵 인덱스를 통해서 생성
         _seletedMapIndex = mapIndex;
-        _curMap = _mapDataList[_seletedMapIndex];
+        _curMap = SODataManager.instance.GetMapData((eMapType)_seletedMapIndex);
 
         // 후경 생성
         Instantiate(_curMap.backgroundPrefab);

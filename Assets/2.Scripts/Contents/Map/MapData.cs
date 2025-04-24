@@ -19,4 +19,6 @@ public class MapData : ScriptableObject
 
     public eMapType mapType = eMapType.Max;
     public Vector2 mapSize = Vector2.zero;
+
+    public Sprite _mapSprite = null;
 }

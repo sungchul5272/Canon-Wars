@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53eeb45d0cb802f4c809840e3c9fc241, type: 3}
   m_Name: GreenTank
   m_EditorClassIdentifier: 
+  _tankType: 0
   _tankName: GreenTank
   _hp: 100
   _atk: 10
   _speed: 2
-  _tankSprite: {fileID: -4315122233561715252, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
+  _tankSprite: {fileID: 21300000, guid: d222fbffff4ccf3469a85a25ee21995f, type: 3}
+  _tankPrefab: {fileID: 739751645702610340, guid: 68be450ddd43b334192ae9c0cc5a4b33, type: 3}

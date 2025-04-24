@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53eeb45d0cb802f4c809840e3c9fc241, type: 3}
   m_Name: YellowTank
   m_EditorClassIdentifier: 
+  _tankType: 1
   _tankName: YellowTank
   _hp: 150
   _atk: 5
   _speed: 1.5
-  _tankSprite: {fileID: -6224010137909128836, guid: dfacefe132a1bc1409be22fc3664228b, type: 3}
+  _tankSprite: {fileID: 21300000, guid: babc2378eddd51243a4ffd2dfd47047e, type: 3}
+  _tankPrefab: {fileID: 739751645702610340, guid: 672512ff4a71e8d4a956b9412207d2eb, type: 3}
