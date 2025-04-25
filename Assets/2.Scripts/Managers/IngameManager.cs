@@ -175,35 +175,27 @@ public class IngameManager : NetworkBehaviour
 
         ulong clientId = NetworkManager.LocalClientId;
 
+        PlayerController curTurnPlayer = null;
         foreach (PlayerController player in FindObjectsOfType<PlayerController>())
         {
             bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
             player.SetTurnMarkVisible(isCurrentTurn);
-        }
-        if ((ulong)turnIndex == clientId)
-        {
-            Debug.Log($"나의 턴.");
-            NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
-            if (playerObject == null)
-            {
-                Debug.LogError("Player Object is null.");
-            }
 
-            if (!playerObject.TryGetComponent<PlayerController>(out var player))
+            if (isCurrentTurn)
             {
-                Debug.LogError("Player Controller is null.");
-            }
+                curTurnPlayer = player;
 
-            GameInitializer.Instance.CurTurnPlayer = player;
-            player.IsMyTurn();
-            player.FillFuel();
-            RandomWindForce();
-            PlayerCameraFocusing(player);
+                Debug.Log($"나의 턴.");
+                //NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+
+                curTurnPlayer.IsMyTurn();
+                curTurnPlayer.FillFuel();
+                RandomWindForce();
+            }
         }
-        else
-        {
-            Debug.Log($"Player {turnIndex}의 턴.");
-        }
+
+        GameInitializer.Instance.CurTurnPlayer = curTurnPlayer;
+        PlayerCameraFocusing(curTurnPlayer);
     }
 
     private void RandomWindForce()
