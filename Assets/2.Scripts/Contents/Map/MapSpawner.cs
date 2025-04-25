@@ -49,19 +49,19 @@ public class MapSpawner : MonoBehaviour
         return _curMap.mapSize;
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.cyan;
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.cyan;
 
-    //    // 중심 좌표 (현재 오브젝트 위치 기준)
-    //    Vector3 center = transform.position;
+        // 중심 좌표 (현재 오브젝트 위치 기준)
+        Vector3 center = transform.position;
 
-    //    if(_curMap != null)
-    //    {
-    //        // Z축은 0으로 고정, X와 Y만 사용
-    //        Vector3 size = new Vector3(_curMap.mapSize.x, _curMap.mapSize.y, 0f);
+        if (_curMap != null)
+        {
+            // Z축은 0으로 고정, X와 Y만 사용
+            Vector3 size = new Vector3(_curMap.mapSize.x, _curMap.mapSize.y, 0f);
 
-    //        Gizmos.DrawWireCube(center, size);
-    //    }
-    //}
+            Gizmos.DrawWireCube(center, size);
+        }
+    }
 }

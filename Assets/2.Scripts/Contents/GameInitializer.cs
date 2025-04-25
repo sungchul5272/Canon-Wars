@@ -34,8 +34,10 @@ public class GameInitializer : NetworkBehaviour
 
     // 맵 생성 여부 확인
     private NetworkList<bool> _mapLoadComplete = new(new List<bool>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private bool _bWaitAllComplete = false;
+    // 카메라 초기화 여부 확인
+    private NetworkList<bool> _camerInitComplete = new(new List<bool>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    private bool _bWaitAllComplete = false;
     private ulong _clientId;
 
     void Awake()
@@ -54,14 +56,27 @@ public class GameInitializer : NetworkBehaviour
             Debug.Log($"[GameInitializer] 맵 인덱스 변경: {prev} → {next}");
         };
 
-        // 변화 확인
+        // 맵 로드 확인
         _mapLoadComplete.OnListChanged += (NetworkListEvent<bool> changeEvent) =>
+        {
+            _bWaitAllComplete = true;
+            int playerCount = NetworkManager.Singleton.ConnectedClients.Count;
+
+            Debug.Log($"[GameInitializer] PlayerCount : {playerCount} mapLoadCompleteCount : {_mapLoadComplete.Count}");
+            if (playerCount != _mapLoadComplete.Count)
+            {
+                _bWaitAllComplete = false;
+            }
+        };
+
+        // 카메라 초기화 확인
+        _camerInitComplete.OnListChanged += (NetworkListEvent<bool> changeEvent) =>
         {
             _bWaitAllComplete = true;
 
             int playerCount = NetworkManager.Singleton.ConnectedClients.Count;
-
-            if (playerCount != _mapLoadComplete.Count)
+            Debug.Log($"[GameInitializer] PlayerCount : {playerCount} camerInitComplete : {_camerInitComplete.Count}");
+            if (playerCount != _camerInitComplete.Count)
             {
                 _bWaitAllComplete = false;
             }
@@ -129,16 +144,36 @@ public class GameInitializer : NetworkBehaviour
 
         Debug.Log("모든 유저 맵 로딩 완료");
 
+        // 각자의 카메라 초기화
+        _camController = Camera.main.GetComponent<CameraController>();
+        _camController.Init(() =>
+        {
+            if(IsServer)
+            {
+                Debug.Log("Server Camera Init Complete");
+                Debug.Log($"Camera Size : {Camera.main.orthographicSize}");
+                _camerInitComplete.Add(true);
+            }
+            else
+            {
+                Debug.Log("Client Camera Init Complete");
+                Debug.Log($"Camera Size : {Camera.main.orthographicSize}");
+                ReportCameraInitServerRpc();
+            }
+        });
+
+        // 모든 플레이어 카메라 초기화 대기
+        while (!_bWaitAllComplete)
+        {
+            yield return null;
+        }
+        Debug.Log("[GameInitializer] 카메라 초기화 완료");
+
         // 플레이어 생성
         Debug.Log("플레이어 생성");
         ulong clientId = (ulong)NetworkManager.Singleton.ConnectedClients.Count - 1;
         SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
-
-        // 각자의 카메라 초기화
-        _camController = Camera.main.GetComponent<CameraController>();
-        _camController?.Init();
-        Debug.Log("[GameInitializer] 카메라 초기화 완료");
 
         if (IsServer)
         {
@@ -151,6 +186,12 @@ public class GameInitializer : NetworkBehaviour
     public void ReportMapLoadedServerRpc()
     {
         _mapLoadComplete.Add(true); // 요청
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ReportCameraInitServerRpc()
+    {
+        _camerInitComplete.Add(true); // 요청
     }
 
     [ServerRpc(RequireOwnership = false)]

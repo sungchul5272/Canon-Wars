@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -42,7 +43,7 @@ public class CameraController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Confined;
     }
 
-    public void Init()
+    public void Init(Action pCallback)
     {
         // 원래 카메라 크기 저장
         _camSizeOriginHeight = _camera.orthographicSize;
@@ -52,6 +53,9 @@ public class CameraController : MonoBehaviour
         MapSizeCheck();
 
         _isInit = true;
+
+        if (pCallback != null)
+            pCallback.Invoke();
     }
 
     public void PlayerFocusing(PlayerController curPlayer)
@@ -75,7 +79,6 @@ public class CameraController : MonoBehaviour
     {
         _zoomTime = 0f;
         Camera.main.orthographicSize = _camSizeOriginHeight;
-
         MapSizeCheck();
     }
 
