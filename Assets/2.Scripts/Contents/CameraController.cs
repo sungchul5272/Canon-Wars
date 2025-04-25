@@ -130,6 +130,10 @@ public class CameraController : MonoBehaviour
 
     private void MoveCameraAroundMap()
     {
+        // 화면 내에서만 인식하도록
+        if (!Camera.main.pixelRect.Contains(Input.mousePosition))
+            return;
+
         // 마우스 위치 알아오기
         Vector3 mousePos = Input.mousePosition;
 

@@ -172,35 +172,44 @@ public class IngameManager : NetworkBehaviour
     {
         ulong clientId = NetworkManager.LocalClientId;
 
-        foreach (PlayerController player in FindObjectsOfType<PlayerController>())
+        PlayerController curTurnPlayer = null;
+
+        foreach (var obj in GameObject.FindGameObjectsWithTag("Player"))
         {
+            PlayerController player = obj.GetComponent<PlayerController>();
             bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
             player.SetTurnMarkVisible(isCurrentTurn);
+
+            if (isCurrentTurn)
+                curTurnPlayer = player;
         }
+
         if ((ulong)turnIndex == clientId)
         {
             Debug.Log($"나의 턴.");
-            NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
-            if (playerObject == null)
-            {
-                Debug.LogError("Player Object is null.");
-            }
+            //NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+            //if (playerObject == null)
+            //{
+            //    Debug.LogError("Player Object is null.");
+            //}
 
-            if (!playerObject.TryGetComponent<PlayerController>(out var player))
-            {
-                Debug.LogError("Player Controller is null.");
-            }
+            //if (!playerObject.TryGetComponent<PlayerController>(out var curTurnPlayer))
+            //{
+            //    Debug.LogError("Player Controller is null.");
+            //}
 
-            GameInitializer.Instance.CurTurnPlayer = player;
-            player.IsMyTurn();
-            player.FillFuel();
+            GameInitializer.Instance.CurTurnPlayer = curTurnPlayer;
+            curTurnPlayer.IsMyTurn();
+            curTurnPlayer.FillFuel();
             RandomWindForce();
-            PlayerCameraFocusing(player);
         }
         else
         {
             Debug.Log($"Player {turnIndex}의 턴.");
         }
+
+        // 현재 턴인 플레이어에게 포커싱
+        PlayerCameraFocusing(curTurnPlayer);
     }
 
     private void RandomWindForce()

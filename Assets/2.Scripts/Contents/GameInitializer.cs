@@ -36,6 +36,9 @@ public class GameInitializer : NetworkBehaviour
     private NetworkList<bool> _mapLoadComplete = new (new List<bool>(),NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
     private bool _bWaitAllComplete = false;
 
+    // 탱크 생성 여부 확인
+    private NetworkVariable<bool> _tankSpawnComplete = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     private ulong _clientId;
 
     void Awake()
@@ -132,6 +135,12 @@ public class GameInitializer : NetworkBehaviour
         SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
 
+        // 모든 플레이어 탱크 생성 대기
+        while (!_tankSpawnComplete.Value)
+        {
+            yield return null;
+        }
+
         // 각자의 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
         _camController?.Init();
@@ -154,9 +163,7 @@ public class GameInitializer : NetworkBehaviour
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
         if (!IsServer)
-        {
             return;
-        }
 
         _spawnPosList = _mapSpawner.GetSpawnPosPList();
         if (_spawnPosList.Count == 0)
@@ -182,6 +189,8 @@ public class GameInitializer : NetworkBehaviour
         if (player.transform.position.x > 0) player.Flip(-1);
 
         Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
+
+        _tankSpawnComplete.Value = true;
 
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
         {
