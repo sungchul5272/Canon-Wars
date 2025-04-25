@@ -107,15 +107,9 @@ public class IngameManager : NetworkBehaviour
         if (!IsServer || !_isGameStarted || _isAttackResolving || _isTurnWait) return;
 
         _turnTimer.Value -= Time.deltaTime;
-        if (_turnTimerText != null)
-            _turnTimerText.text = Mathf.CeilToInt(_turnTimer.Value).ToString();
 
         if (_turnTimer.Value <= 0f)
         {
-            // 반복 호출 방지
-            _turnTimer.Value = 99999;
-
-            // 턴 종료
             PlayerTurnEnd();
         }
     }
@@ -165,6 +159,9 @@ public class IngameManager : NetworkBehaviour
     {
         int startTurn = UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
         _netTurnIndex.Value = startTurn;
+
+        _turnTimer.Value = _turnTime;
+        _isGameStarted = true;
     }
 
     [ClientRpc]
@@ -299,14 +296,10 @@ public class IngameManager : NetworkBehaviour
         }
     }
 
-    public string GetTurnTime()
+    public float GetTurnTime()
     {
-        return _turnTimer.ToString();
+        return Mathf.Max(0, _turnTimer.Value);
     }
 
 }
 
-public static class MatchData
-{
-    public static string EnemyUID;
-}

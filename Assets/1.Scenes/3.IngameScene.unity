@@ -607,10 +607,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  _turnTime: 40
+  _turnTime: 10
   _postAttackDelay: 10
   _turnTimerText: {fileID: 0}
-  _windForceMax: 0
+  _windForceMax: 10
   _curWindForce: 0
 --- !u!4 &290170686
 Transform:

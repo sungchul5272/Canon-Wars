@@ -73,7 +73,6 @@ public class IngameUIController : MonoBehaviour
         else
             _windText.text = "-";
     }
-
     void UpdateTurnUI()
     {
         if (IngameManager.Instance == null || !IngameManager.Instance.IsSpawned)
@@ -81,8 +80,8 @@ public class IngameUIController : MonoBehaviour
 
         if (IngameManager.Instance.IsMyTurn())
         {
-            Debug.Log("시간감소");
-            _ingameTimer.text = IngameManager.Instance.GetTurnTime();
+            int time = Mathf.CeilToInt(IngameManager.Instance.GetTurnTime());
+            _ingameTimer.text = time.ToString();
         }
         else
         {
