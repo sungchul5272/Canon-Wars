@@ -27,6 +27,7 @@ public class IngameUIController : MonoBehaviour
     void Update()
     {
         HandleMissileSelection();
+        UpdateTurnUI();
     }
 
     void HandleMissileSelection()
@@ -73,11 +74,19 @@ public class IngameUIController : MonoBehaviour
             _windText.text = "-";
     }
 
-    // 게임 타이머 표시
-    public void SetTimer(float seconds)
+    void UpdateTurnUI()
     {
-        int min = Mathf.FloorToInt(seconds / 60f);
-        int sec = Mathf.FloorToInt(seconds % 60f);
-        _ingameTimer.text = $"{min:00}:{sec:00}";
+        if (IngameManager.Instance == null || !IngameManager.Instance.IsSpawned)
+            return;
+
+        if (IngameManager.Instance.IsMyTurn())
+        {
+            Debug.Log("시간감소");
+            _ingameTimer.text = IngameManager.Instance.GetTurnTime();
+        }
+        else
+        {
+            _ingameTimer.text = "상대턴";
+        }
     }
 }

@@ -537,10 +537,10 @@ public class PlayerController : NetworkBehaviour
             BroadcastHPToOthersClientRpc(_hp.Value);
         }
 
-        if (_hp.Value <= 0)
+        if (_hp.Value <= 0 && !_isDead)
         {
-            Debug.Log("»ç¸Á");
-            gameObject.SetActive(false);
+            _isDead = true;
+            IngameManager.Instance.NotifyDeathServerRpc();
         }
     }
 

@@ -33,11 +33,8 @@ public class GameInitializer : NetworkBehaviour
     private Dictionary<ulong, UserData> _clientUserData = new();
 
     // 맵 생성 여부 확인
-    private NetworkList<bool> _mapLoadComplete = new (new List<bool>(),NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
+    private NetworkList<bool> _mapLoadComplete = new(new List<bool>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private bool _bWaitAllComplete = false;
-
-    // 탱크 생성 여부 확인
-    private NetworkVariable<bool> _tankSpawnComplete = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private ulong _clientId;
 
@@ -56,12 +53,12 @@ public class GameInitializer : NetworkBehaviour
         {
             Debug.Log($"[GameInitializer] 맵 인덱스 변경: {prev} → {next}");
         };
-        
+
         // 변화 확인
         _mapLoadComplete.OnListChanged += (NetworkListEvent<bool> changeEvent) =>
         {
             _bWaitAllComplete = true;
-              
+
             int playerCount = NetworkManager.Singleton.ConnectedClients.Count;
 
             if (playerCount != _mapLoadComplete.Count)
@@ -72,8 +69,11 @@ public class GameInitializer : NetworkBehaviour
 
         if (IsClient)
         {
-            SetMyInfoUI(FirebaseManager._instance.userVO.NickName, nameof(NetworkPlayerData.selectedTank));
-            ReportPlayerInfoServerRpc(FirebaseManager._instance.userVO.NickName, nameof(NetworkPlayerData.selectedTank));
+            string nick = FirebaseManager._instance.userVO.NickName;
+            string tankKey = NetworkPlayerData.selectedTank.ToString();
+
+            SetMyInfoUI(nick, tankKey);
+            ReportPlayerInfoServerRpc(nick, tankKey);
 
             _loadingUI.SetActive(true);
         }
@@ -135,12 +135,6 @@ public class GameInitializer : NetworkBehaviour
         SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
 
-        // 모든 플레이어 탱크 생성 대기
-        while (!_tankSpawnComplete.Value)
-        {
-            yield return null;
-        }
-
         // 각자의 카메라 초기화
         _camController = Camera.main.GetComponent<CameraController>();
         _camController?.Init();
@@ -163,7 +157,9 @@ public class GameInitializer : NetworkBehaviour
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
         if (!IsServer)
+        {
             return;
+        }
 
         _spawnPosList = _mapSpawner.GetSpawnPosPList();
         if (_spawnPosList.Count == 0)
@@ -189,8 +185,6 @@ public class GameInitializer : NetworkBehaviour
         if (player.transform.position.x > 0) player.Flip(-1);
 
         Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
-
-        _tankSpawnComplete.Value = true;
 
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
         {
@@ -243,7 +237,15 @@ public class GameInitializer : NetworkBehaviour
     void SendPlayerInfoClientRpc(string enemyNick, string enemyTankKey, ClientRpcParams clientRpcParams = default)
     {
         _enemyNickText.text = enemyNick;
-        _enemyTankImage.sprite = TankUtil.GetTankSprite(enemyTankKey);
+
+        if (System.Enum.TryParse(enemyTankKey, out eTankType tankType))
+        {
+            var tankData = SODataManager.instance.GetTankData(tankType);
+            if (tankData != null)
+            {
+                _enemyTankImage.sprite = tankData._tankSprite;
+            }
+        }
 
         Debug.Log($"[클라이언트] 상대 정보 수신 - 닉네임: {enemyNick}, 탱크: {enemyTankKey}");
     }
@@ -251,11 +253,18 @@ public class GameInitializer : NetworkBehaviour
     public void SetMyInfoUI(string nick, string tankKey)
     {
         _myNickText.text = nick;
-        _myTankImage.sprite = TankUtil.GetTankSprite(tankKey);
+
+        if (System.Enum.TryParse(tankKey, out eTankType tankType))
+        {
+            var tankData = SODataManager.instance.GetTankData(tankType);
+            if (tankData != null)
+            {
+                _myTankImage.sprite = tankData._tankSprite;
+            }
+        }
+
         Debug.Log($"[클라이언트] 내 정보 UI 세팅 - 닉네임: {nick}, 탱크: {tankKey}");
     }
-
-
 
     [ClientRpc]
     void CloseLoadingUIClientRpc()

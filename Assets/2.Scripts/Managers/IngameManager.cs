@@ -29,6 +29,7 @@ public class IngameManager : NetworkBehaviour
     bool _isAttackResolving = false;
     bool _isTurnWait = false;
 
+
     //NetworkVariable<ulong> _currentTurnClientId = new();
     NetworkVariable<float> _turnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -170,46 +171,39 @@ public class IngameManager : NetworkBehaviour
     [ClientRpc]
     public void FindCurrentTurnPlayerClientRpc(int turnIndex)
     {
+        CheckGameEndCondition();
+
         ulong clientId = NetworkManager.LocalClientId;
 
-        PlayerController curTurnPlayer = null;
-
-        foreach (var obj in GameObject.FindGameObjectsWithTag("Player"))
+        foreach (PlayerController player in FindObjectsOfType<PlayerController>())
         {
-            PlayerController player = obj.GetComponent<PlayerController>();
             bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
             player.SetTurnMarkVisible(isCurrentTurn);
-
-            if (isCurrentTurn)
-                curTurnPlayer = player;
         }
-
         if ((ulong)turnIndex == clientId)
         {
             Debug.Log($"나의 턴.");
-            //NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
-            //if (playerObject == null)
-            //{
-            //    Debug.LogError("Player Object is null.");
-            //}
+            NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+            if (playerObject == null)
+            {
+                Debug.LogError("Player Object is null.");
+            }
 
-            //if (!playerObject.TryGetComponent<PlayerController>(out var curTurnPlayer))
-            //{
-            //    Debug.LogError("Player Controller is null.");
-            //}
+            if (!playerObject.TryGetComponent<PlayerController>(out var player))
+            {
+                Debug.LogError("Player Controller is null.");
+            }
 
-            GameInitializer.Instance.CurTurnPlayer = curTurnPlayer;
-            curTurnPlayer.IsMyTurn();
-            curTurnPlayer.FillFuel();
+            GameInitializer.Instance.CurTurnPlayer = player;
+            player.IsMyTurn();
+            player.FillFuel();
             RandomWindForce();
+            PlayerCameraFocusing(player);
         }
         else
         {
             Debug.Log($"Player {turnIndex}의 턴.");
         }
-
-        // 현재 턴인 플레이어에게 포커싱
-        PlayerCameraFocusing(curTurnPlayer);
     }
 
     private void RandomWindForce()
@@ -232,12 +226,74 @@ public class IngameManager : NetworkBehaviour
         return _netTurnIndex.Value == (int)NetworkManager.Singleton.LocalClientId;
     }
 
+
     [ServerRpc(RequireOwnership = false)]
-    public void NotifyDeadServerRpc(ulong clientId)
+    public void NotifyDeathServerRpc(ServerRpcParams rpcParams = default)
     {
-        Debug.Log($"게임 종료: 클라이언트 {clientId} 사망");
+        ulong senderId = rpcParams.Receive.SenderClientId;
+
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(senderId, out var client))
+        {
+            var playerObj = client.PlayerObject;
+            if (playerObj != null)
+            {
+                Debug.Log($"서버: 플레이어 {senderId} 사망, 오브젝트 제거");
+                playerObj.Despawn(true);
+            }
+        }
+
+
+        CheckGameEndCondition();
+    }
+    void CheckGameEndCondition()
+    {
+        var alivePlayers = new List<NetworkObject>();
+
+        foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
+        {
+            var obj = kvp.Value.PlayerObject;
+            if (obj != null && obj.IsSpawned)
+            {
+                alivePlayers.Add(obj);
+            }
+        }
+
+        Debug.Log($"[게임 상태] 생존한 플레이어 수: {alivePlayers.Count}");
+
+        if (alivePlayers.Count <= 1)
+        {
+            EndGame(alivePlayers.Count == 1 ? alivePlayers[0].OwnerClientId : (ulong?)null);
+        }
+    }
+
+    void EndGame(ulong? winnerClientId)
+    {
+        NotifyGameEndClientRpc(winnerClientId.HasValue ? winnerClientId.Value : ulong.MaxValue);
+
         _isGameStarted = false;
     }
+    [ClientRpc]
+    void NotifyGameEndClientRpc(ulong winnerId)
+    {
+        if (winnerId == ulong.MaxValue)
+        {
+            Debug.Log("무승부");
+        }
+        else if (NetworkManager.Singleton.LocalClientId == winnerId)
+        {
+            Debug.Log("승리");
+        }
+        else
+        {
+            Debug.Log("패배");
+        }
+    }
+
+    public string GetTurnTime()
+    {
+        return _turnTimer.ToString();
+    }
+
 }
 
 public static class MatchData
