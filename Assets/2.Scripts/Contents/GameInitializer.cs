@@ -222,9 +222,6 @@ public class GameInitializer : NetworkBehaviour
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
         tank.name = $"Player {clientId}";
 
-        var player = tank.GetComponent<PlayerController>();
-        if (player.transform.position.x > 0) player.Flip(-1);
-
         Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
 
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())

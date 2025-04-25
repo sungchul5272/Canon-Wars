@@ -19,7 +19,7 @@ public class IngameManager : NetworkBehaviour
     [Header("Environment")]
     [Range(0f, 10f)]
     [SerializeField] private float _windForceMax = 0f;
-    [SerializeField] private float _curWindForce = 0f;
+    //[SerializeField] private float _curWindForce = 0f;
 
     private const float TURN_END_TERM = 3f;
 
@@ -29,8 +29,7 @@ public class IngameManager : NetworkBehaviour
     bool _isAttackResolving = false;
     bool _isTurnWait = false;
 
-
-    //NetworkVariable<ulong> _currentTurnClientId = new();
+    NetworkVariable<float> _netWindForce = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<float> _turnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -173,39 +172,59 @@ public class IngameManager : NetworkBehaviour
     {
         CheckGameEndCondition();
 
+        NetworkObject playerObject;
+        PlayerController player;
         ulong clientId = NetworkManager.LocalClientId;
-
-        PlayerController curTurnPlayer = null;
-        foreach (PlayerController player in FindObjectsOfType<PlayerController>())
+        bool isCurrentTurn = clientId == (ulong)turnIndex;
+        if (isCurrentTurn)
         {
-            bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
-            player.SetTurnMarkVisible(isCurrentTurn);
-
-            if (isCurrentTurn)
-            {
-                curTurnPlayer = player;
-
-                Debug.Log($"나의 턴.");
-                //NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
-
-                curTurnPlayer.IsMyTurn();
-                curTurnPlayer.FillFuel();
-                RandomWindForce();
-            }
+            playerObject = NetworkManager.Singleton.ConnectedClients[(ulong)turnIndex].PlayerObject;
+            player = playerObject.GetComponent<PlayerController>();
+            Debug.Log($"나의 턴.");
+            player.IsMyTurn();
+            player.FillFuel();
+            player.SetTurnMarkVisible(true);
+            SetRandomWindForceServerRpc();
+        }
+        else
+        {
+            playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+            player = playerObject.GetComponent<PlayerController>();
+            player.SetTurnMarkVisible(false);
         }
 
-        GameInitializer.Instance.CurTurnPlayer = curTurnPlayer;
-        PlayerCameraFocusing(curTurnPlayer);
+        //foreach (PlayerController player in GameObject.FindGameObjectWithTag("Player"))
+        //{
+        //    bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
+        //    player.SetTurnMarkVisible(isCurrentTurn);
+
+        //    if (isCurrentTurn)
+        //    {
+        //        curTurnPlayer = player;
+
+        //        Debug.Log($"나의 턴.");
+        //        //NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+
+        //        curTurnPlayer.IsMyTurn();
+        //        curTurnPlayer.FillFuel();
+        //        RandomWindForce();
+        //    }
+        //}
+
+        GameInitializer.Instance.CurTurnPlayer = player;
+        PlayerCameraFocusing(player);
     }
 
-    private void RandomWindForce()
+    [ServerRpc(RequireOwnership = false)]
+    private void SetRandomWindForceServerRpc()
     {
-        _curWindForce = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
-        Debug.Log($"바람 세기: {_curWindForce}");
-        IngameUIController.Instance.SetWind(_curWindForce);
+        _netWindForce.Value = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
+        //_curWindForce = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
+        Debug.Log($"바람 세기: {_netWindForce.Value}");
+        IngameUIController.Instance.SetWind(_netWindForce.Value);
     }
 
-    public float GetWindForce() => _curWindForce;
+    public float GetWindForce() => _netWindForce.Value;
     public bool IsCurPlayerTurnWait() => _isTurnWait;
 
     public void PlayerCameraFocusing(PlayerController playerController)
@@ -217,7 +236,6 @@ public class IngameManager : NetworkBehaviour
     {
         return _netTurnIndex.Value == (int)NetworkManager.Singleton.LocalClientId;
     }
-
 
     [ServerRpc(RequireOwnership = false)]
     public void NotifyDeathServerRpc(ServerRpcParams rpcParams = default)
@@ -234,9 +252,9 @@ public class IngameManager : NetworkBehaviour
             }
         }
 
-
         CheckGameEndCondition();
     }
+
     void CheckGameEndCondition()
     {
         var alivePlayers = new List<NetworkObject>();

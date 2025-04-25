@@ -105,6 +105,12 @@ public class PlayerController : NetworkBehaviour
         _isMyTurn = false;
 
         HidePredictionsPoints();
+        SetTurnMarkVisible(false);
+
+        if (transform.position.x > 0)
+        {
+            Flip(-1);
+        }
     }
 
     // Update is called once per frame
