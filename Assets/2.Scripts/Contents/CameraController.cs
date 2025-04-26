@@ -43,7 +43,7 @@ public class CameraController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Confined;
     }
 
-    public void Init(Action pCallback)
+    public void Init()//Action pCallback)
     {
         // 원래 카메라 크기 저장
         _camSizeOriginHeight = _camera.orthographicSize;
@@ -54,8 +54,8 @@ public class CameraController : MonoBehaviour
 
         _isInit = true;
 
-        if (pCallback != null)
-            pCallback.Invoke();
+        //if (pCallback != null)
+        //    pCallback.Invoke();
     }
 
     public void PlayerFocusing(PlayerController curPlayer)
@@ -85,14 +85,13 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
         if (_isInit == true && GameInitializer.Instance != null)
         {
-            if (GameInitializer.Instance.CurShellTrans != null)
+            if (IngameManager.Instance.CurShellTrans != null)
             {
                 CameraZoomOut();
                 // 포탄 포커싱
-                _curShellTrans = GameInitializer.Instance.CurShellTrans;
+                _curShellTrans = IngameManager.Instance.CurShellTrans;
 
                 // 카메라가 맵 범위 밖으로 안나가도록 제한
                 _newPosX = Mathf.Clamp(_curShellTrans.position.x, _mapBottomLeft.x, _mapTopRight.x);

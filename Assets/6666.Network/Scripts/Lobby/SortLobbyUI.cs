@@ -34,6 +34,7 @@ public class SortLobbyUI : MonoBehaviour
         // 로비 목록 새로고침
         refreshButton.onClick.AddListener(() =>
         {
+            refreshButton.interactable = false;
             LobbyManager.Instance.RefreshPublicLobbies(GameMode);
         });
 
@@ -94,6 +95,7 @@ public class SortLobbyUI : MonoBehaviour
         float slotHeight = lobbySlotPrefab.rectTransform.sizeDelta.y;
         lobbyScrollContent.sizeDelta = new Vector2(lobbyScrollContent.sizeDelta.x, instance.PublicLobbyDatas.Count * slotHeight);
         lobbyScrollView.gameObject.SetActive(true);
+        refreshButton.interactable = true;
     }
 
     public void ShowJoinFailedUI()

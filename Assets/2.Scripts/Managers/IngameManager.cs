@@ -23,17 +23,20 @@ public class IngameManager : NetworkBehaviour
 
     private const float TURN_END_TERM = 3f;
 
-    bool _isMapSpawned = false;
-    bool _isTankSpawned = false;
+    //bool _isMapSpawned = false;
+    //bool _isTankSpawned = false;
     bool _isGameStarted = false;
-    bool _isAttackResolving = false;
+    //bool _isAttackResolving = false;
     bool _isTurnWait = false;
 
+    public Transform CurShellTrans { get; set; }
+    //public PlayerController CurTurnPlayer { get; set; }
+
     NetworkVariable<float> _netWindForce = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    NetworkVariable<float> _turnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    NetworkVariable<float> _netTurnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    Dictionary<ulong, bool> _clientReadyDict = new();
+    //Dictionary<ulong, bool> _clientReadyDict = new();
 
     void Awake()
     {
@@ -48,6 +51,17 @@ public class IngameManager : NetworkBehaviour
             Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
 
             FindCurrentTurnPlayerClientRpc(next);
+
+            if (IsServer)
+            {
+                _netWindForce.Value = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
+            }
+        };
+
+        _netWindForce.OnValueChanged += (prev, next) =>
+        {
+            Debug.Log($"[IngameManager] 바람 세기 변경: {prev} → {next}");
+            SetWindUIClientRpc();
         };
 
         //if (IsClient && !IsServer)
@@ -61,75 +75,101 @@ public class IngameManager : NetworkBehaviour
         }
     }
 
-    public void InitMapDone() { _isMapSpawned = true; InitAllDOne(); }
-    public void InitTankDone() { _isTankSpawned = true; InitAllDOne(); }
+    //public void InitMapDone() { _isMapSpawned = true; InitAllDOne(); }
+    //public void InitTankDone() { _isTankSpawned = true; InitAllDOne(); }
 
-    void InitAllDOne()
+    //void InitAllDOne()
+    //{
+    //    if (_isMapSpawned && _isTankSpawned)
+    //    {
+    //        ReportClientReadyServerRpc();
+    //    }
+    //}
+
+    //[ServerRpc(RequireOwnership = false)]
+    //void ReportClientReadyServerRpc(ServerRpcParams rpcParams = default)
+    //{
+    //    ulong senderId = rpcParams.Receive.SenderClientId;
+    //    _clientReadyDict[senderId] = true;
+
+    //    if (AllClientsReady())
+    //    {
+    //        StartCoroutine(StartGameRoutine());
+    //    }
+    //}
+
+    //bool AllClientsReady()
+    //{
+    //    foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+    //    {
+    //        if (!_clientReadyDict.ContainsKey(clientId) || !_clientReadyDict[clientId]) return false;
+    //    }
+    //    return true;
+    //}
+
+    [ClientRpc]
+    void SetWindUIClientRpc()
     {
-        if (_isMapSpawned && _isTankSpawned)
-        {
-            ReportClientReadyServerRpc();
-        }
+        IngameUIController.Instance.SetWind(_netWindForce.Value);
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    void ReportClientReadyServerRpc(ServerRpcParams rpcParams = default)
+    public void StartGame()
     {
-        ulong senderId = rpcParams.Receive.SenderClientId;
-        _clientReadyDict[senderId] = true;
-
-        if (AllClientsReady())
-        {
-            StartCoroutine(StartGameRoutine());
-        }
-    }
-
-    bool AllClientsReady()
-    {
-        foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            if (!_clientReadyDict.ContainsKey(clientId) || !_clientReadyDict[clientId]) return false;
-        }
-        return true;
-    }
-
-    IEnumerator StartGameRoutine()
-    {
-        yield return new WaitForSeconds(1f);
-
-        _turnTimer.Value = _turnTime;
+        _netTurnTimer.Value = _turnTime;
 
         _isGameStarted = true;
     }
 
+    //IEnumerator StartGameRoutine()
+    //{
+    //    yield return new WaitForSeconds(1f);
+
+    //    _netTurnTimer.Value = _turnTime;
+
+    //    _isGameStarted = true;
+    //}
+
     void Update()
     {
-        if (!IsServer || !_isGameStarted || _isAttackResolving || _isTurnWait) return;
-
-        _turnTimer.Value -= Time.deltaTime;
-
-        if (_turnTimer.Value <= 0f)
+        if (!IsServer || !_isGameStarted || _isTurnWait)// ||_isAttackResolving)
         {
-            PlayerTurnEnd();
+            return;
+        }
+
+        _netTurnTimer.Value -= Time.deltaTime;
+
+        if (_netTurnTimer.Value <= 0f)
+        {
+            //ForceTurnEndClientRpc();
+            CurShellTrans = null;
+            PlayerTurnEndServerRpc();
         }
     }
 
-    public void NotifyAttackCompleted()
-    {
-        if (!IsMyTurn() || _isAttackResolving) return;
-        StartCoroutine(DelayedEndTurn());
-    }
+    //public void NotifyAttackCompleted()
+    //{
+    //    if (!IsMyTurn() || _isAttackResolving) return;
+    //    StartCoroutine(DelayedEndTurn());
+    //}
 
-    IEnumerator DelayedEndTurn()
-    {
-        _isAttackResolving = true;
-        yield return new WaitForSeconds(_postAttackDelay);
-        PlayerTurnEnd();
-        _isAttackResolving = false;
-    }
+    //IEnumerator DelayedEndTurn()
+    //{
+    //    _isAttackResolving = true;
+    //    yield return new WaitForSeconds(_postAttackDelay);
+    //    PlayerTurnEnd();
+    //    _isAttackResolving = false;
+    //}
 
-    public void PlayerTurnEnd()
+    //[ClientRpc]
+    //private void ForceTurnEndClientRpc()
+    //{
+    //    CurShellTrans = null;
+    //}
+
+    [ServerRpc(RequireOwnership = false)]
+    public void PlayerTurnEndServerRpc()
     {
+        Debug.Log("턴 종료.");
         _isTurnWait = true;
         StartCoroutine(StartNextPlayerTurn());
     }
@@ -137,7 +177,7 @@ public class IngameManager : NetworkBehaviour
     private IEnumerator StartNextPlayerTurn()
     {
         // 포탄이 사라질 때까지 대기
-        while (GameInitializer.Instance.CurShellTrans != null)
+        while (CurShellTrans != null)
             yield return null;
 
         // 약간의 지연 시간
@@ -145,49 +185,52 @@ public class IngameManager : NetworkBehaviour
 
         // 턴 이동
         _isTurnWait = false;
-        MoveTurnServerRpc();
+        MoveTurn();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void MoveTurnServerRpc()
+    private void MoveTurn()
     {
-        _turnTimer.Value = _turnTime;
+        Debug.Log("턴 이동.");
+        _netTurnTimer.Value = _turnTime;
         _netTurnIndex.Value = (_netTurnIndex.Value + 1) % NetworkPlayerData.GetMaxPlayer();
     }
 
     public void SetStartTurnIndex()
     {
+        Debug.Log("시작 턴 결정.");
         int startTurn = UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
         _netTurnIndex.Value = startTurn;
 
-        _turnTimer.Value = _turnTime;
+        _netTurnTimer.Value = _turnTime;
         _isGameStarted = true;
     }
 
     [ClientRpc]
     public void FindCurrentTurnPlayerClientRpc(int turnIndex)
     {
+        Debug.Log("현재 턴의 플레이어 탐색.");
+
         CheckGameEndCondition();
 
-        NetworkObject playerObject;
-        PlayerController player;
-        ulong clientId = NetworkManager.LocalClientId;
-        bool isCurrentTurn = clientId == (ulong)turnIndex;
-        if (isCurrentTurn)
+        var connectedClients = NetworkManager.Singleton.ConnectedClients;
+        for (int i = 0; i < connectedClients.Count; i++)
         {
-            playerObject = NetworkManager.Singleton.ConnectedClients[(ulong)turnIndex].PlayerObject;
-            player = playerObject.GetComponent<PlayerController>();
-            Debug.Log($"나의 턴.");
-            player.IsMyTurn();
-            player.FillFuel();
-            player.SetTurnMarkVisible(true);
-            SetRandomWindForceServerRpc();
-        }
-        else
-        {
-            playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
-            player = playerObject.GetComponent<PlayerController>();
-            player.SetTurnMarkVisible(false);
+            NetworkObject playerObject = connectedClients[(ulong)i].PlayerObject;
+            PlayerController player = playerObject.GetComponent<PlayerController>();
+
+            bool isTurn = turnIndex == i;
+            player.SetTurnMarkVisible(isTurn);
+            if (isTurn)
+            {
+                PlayerCameraFocusing(player);
+                bool isMyTurn = NetworkManager.Singleton.LocalClientId == (ulong)turnIndex;
+                if (isMyTurn)
+                {
+                    Debug.Log($"나의 턴.");
+                    player.SetMyTurn();
+                    player.FillFuel();
+                }
+            }
         }
 
         //foreach (PlayerController player in GameObject.FindGameObjectWithTag("Player"))
@@ -208,17 +251,8 @@ public class IngameManager : NetworkBehaviour
         //    }
         //}
 
-        GameInitializer.Instance.CurTurnPlayer = player;
-        PlayerCameraFocusing(player);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void SetRandomWindForceServerRpc()
-    {
-        _netWindForce.Value = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
-        //_curWindForce = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
-        Debug.Log($"바람 세기: {_netWindForce.Value}");
-        IngameUIController.Instance.SetWind(_netWindForce.Value);
+        //CurTurnPlayer = player;
+        //PlayerCameraFocusing(player);
     }
 
     public float GetWindForce() => _netWindForce.Value;
@@ -298,8 +332,7 @@ public class IngameManager : NetworkBehaviour
 
     public float GetTurnTime()
     {
-        return Mathf.Max(0, _turnTimer.Value);
+        return Mathf.Max(0, _netTurnTimer.Value);
     }
-
 }
 

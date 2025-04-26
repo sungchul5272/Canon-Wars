@@ -611,7 +611,6 @@ MonoBehaviour:
   _postAttackDelay: 10
   _turnTimerText: {fileID: 0}
   _windForceMax: 10
-  _curWindForce: 0
 --- !u!4 &290170686
 Transform:
   m_ObjectHideFlags: 0
@@ -984,6 +983,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  _textureRandom: {fileID: 21300000, guid: 413c0efc113ac6340966129e60370f82, type: 3}
   _loadingUI: {fileID: 337866706}
   _myNickText: {fileID: 417452937}
   _myTankImage: {fileID: 1227457412}

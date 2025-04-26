@@ -63,8 +63,6 @@ public class PlayerController : NetworkBehaviour
     private bool _isDead = false;                   // 죽음 확인    
     private bool _isFire = false;
     private bool _bAfterDeadEvent = false;       // 죽음 이후 이벤트 한번만 실행하기 위한 bool
-
-    private bool _isMyTurn = false;
     private bool _isCanFire = false;
 
     private NetworkObject _curSpawnedShell;
@@ -73,6 +71,11 @@ public class PlayerController : NetworkBehaviour
     {
         _rb2D = GetComponent<Rigidbody2D>();
         _colider2D = GetComponent<CircleCollider2D>();
+
+        CameraController _camController = Camera.main.GetComponent<CameraController>();
+        _camController.Init();
+        Debug.Log($"Camera Size : {Camera.main.orthographicSize}");
+        Debug.Log("카메라 초기화 완료");
     }
 
     public override void OnNetworkSpawn()
@@ -83,7 +86,6 @@ public class PlayerController : NetworkBehaviour
         {
             _playerHpBar.value = Mathf.Clamp(newVal, 0, 100);
         };
-
     }
 
     public void Init()
@@ -102,7 +104,6 @@ public class PlayerController : NetworkBehaviour
 
         _isDead = false;
         _bAfterDeadEvent = false;
-        _isMyTurn = false;
 
         HidePredictionsPoints();
         SetTurnMarkVisible(false);
@@ -131,9 +132,11 @@ public class PlayerController : NetworkBehaviour
         // 땅에 있는지 확인 및 중력값 실시간 조정
         _isGround = GroundCheckAndGravityUpdate();
 
-        // 내 턴일 경우에만 움직임
-        if (_isMyTurn == false)
+        // 내 턴이고 포탄을 쏠 수 있을 때에만 움직임
+        if (!IngameManager.Instance.IsMyTurn() || !_isCanFire)
+        {
             return;
+        }
 
         // 포탄 변경
         if (Input.GetKeyDown(KeyCode.Alpha1))
@@ -239,15 +242,6 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
-    //private void LateUpdate()
-    //{
-    //    // Input 문제로 인해 LateUpdate에서 확인
-    //    if(_isMyTurn == true && _isCanFire == false)
-    //    {
-    //        EndTurn();
-    //    }
-    //}
-
     [ServerRpc(RequireOwnership = false)]
     private void GenerationShellServerRpc(float shellPower)
     {
@@ -304,10 +298,10 @@ public class PlayerController : NetworkBehaviour
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
             // 포탄 위치 정보 건네주기
-            GameInitializer.Instance.CurShellTrans = netObj.transform;
+            IngameManager.Instance.CurShellTrans = netObj.transform;
 
-            // 발사한 포탄 저장
-            if (_isMyTurn)
+            // 내 턴이면 발사한 포탄 저장
+            if (IngameManager.Instance.IsMyTurn())
             {
                 _curShell = netObj.gameObject;
             }
@@ -371,18 +365,15 @@ public class PlayerController : NetworkBehaviour
     }
 
 
-    public void IsMyTurn()
+    public void SetMyTurn()
     {
-        _isMyTurn = true;
         _isCanFire = true;
         _isFire = false;
     }
 
     private void EndTurn()
     {
-        _isMyTurn = false;
-        // TODO : 임시이므로 나중에 게임매니저에게 알려주기
-        IngameManager.Instance.PlayerTurnEnd();
+        IngameManager.Instance.PlayerTurnEndServerRpc();
     }
 
     private bool CheckDead()
@@ -479,9 +470,11 @@ public class PlayerController : NetworkBehaviour
 
     private void ShowPredictionPoints(float time)
     {
-        // 내턴이 아니라면 안보여줌
-        if (_isMyTurn == false)
+        // 내 탱크와 내 턴이 아니라면 안 보여줌
+        if (!IngameManager.Instance.IsMyTurn() || !IsOwner)
+        {
             return;
+        }
 
         for(int i = 0; i < _predictionPointNum; i++)
         {

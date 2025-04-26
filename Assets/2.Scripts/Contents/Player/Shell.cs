@@ -184,7 +184,7 @@ public class Shell : NetworkBehaviour
     protected void ReleaseShell()
     {
         // 카메라가 더이상 포탄을 안따라가도록
-        GameInitializer.Instance.CurShellTrans = null;
+        IngameManager.Instance.CurShellTrans = null;
 
         // 충돌한 경우에만 Pool
         NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
