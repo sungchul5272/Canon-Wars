@@ -62,8 +62,6 @@ public class LobbyManager : MonoBehaviour
     float _checkLobbyTime = 1.1f;
     bool _isGameStart;
 
-    eMapType _lastMapType = eMapType.Random;
-
     void Awake()
     {
         Instance = this;
@@ -263,7 +261,8 @@ public class LobbyManager : MonoBehaviour
 
     public async void LeaveLobby()
     {
-        loadingUI.SetActive(true);  
+        loadingUI.SetActive(true);
+        CancelInvoke(nameof(RefreshPlayers));
         if (IsLobbyHost)
         {
             // 호스트가 나갈 경우 로비 삭제
@@ -275,7 +274,6 @@ public class LobbyManager : MonoBehaviour
             // 아니면 로비에서 본인 제거
             try
             {
-                CancelInvoke(nameof(RefreshPlayers));
                 await LobbyService.Instance.RemovePlayerAsync(_joinedLobby.Id, AuthenticationService.Instance.PlayerId);
                 Debug.Log($"{_playerName} left the lobby.");
             }
@@ -288,7 +286,6 @@ public class LobbyManager : MonoBehaviour
         _joinedLobby = null;
         loadingUI.SetActive(false);
         mainLobbyUI.LeaveMainLobbyUI();
-        CancelInvoke(nameof(MaintainLobby));
     }
 
     public async void MaintainLobby()
@@ -304,6 +301,21 @@ public class LobbyManager : MonoBehaviour
             {
                 Debug.LogError(ex.Message);
             }
+        }
+    }
+
+    async void DeleteLobby()
+    {
+        // 로비 삭제
+        try
+        {
+            CancelInvoke(nameof(MaintainLobby));
+            await LobbyService.Instance.DeleteLobbyAsync(_joinedLobby.Id);
+            Debug.Log("Lobby deleted.");
+        }
+        catch (LobbyServiceException ex)
+        {
+            Debug.LogError(ex.Message);
         }
     }
 
@@ -377,7 +389,7 @@ public class LobbyManager : MonoBehaviour
     }
 
     // 맵 변경 보여주기
-    public async void ChangeMap(eMapType selectedMap)
+    public async void ChangeMap(eMapType mapType)
     {
         if (!IsLobbyHost || _joinedLobby == null)
             return;
@@ -388,11 +400,12 @@ public class LobbyManager : MonoBehaviour
             {
                 Data = new Dictionary<string, DataObject>
                 {
-                      { _gameMapDataKey, new DataObject(DataObject.VisibilityOptions.Member, selectedMap.ToString()) }
+                    { _gameMapDataKey, new DataObject(DataObject.VisibilityOptions.Member, mapType.ToString()) }
                 }
             });
 
-            Debug.Log($"Map changed to: {selectedMap}");
+            selectedMapType = mapType;
+            Debug.Log($"Map changed to: {mapType}");
         }
         catch (LobbyServiceException ex)
         {
@@ -446,12 +459,10 @@ public class LobbyManager : MonoBehaviour
             // 맵 갱신
             if (_joinedLobby.Data.TryGetValue(_gameMapDataKey, out var mapData))
             {
-                var selectedMap = (eMapType)System.Enum.Parse(typeof(eMapType), mapData.Value);
-              
-                if (!IsLobbyHost) //  호스트가 아닌경우에만 맵 변경 보여주기
+                if (!IsLobbyHost) // 호스트가 아닌경우에만 맵 변경 보여주기
                 {
+                    eMapType selectedMap = (eMapType)System.Enum.Parse(typeof(eMapType), mapData.Value);
                     mainLobbyUI.ShowSelectedMap(selectedMap);
-                    _lastMapType = selectedMap;
                 }
             }
         }
@@ -471,7 +482,6 @@ public class LobbyManager : MonoBehaviour
                 Debug.LogError(ex.Message);
             }
         }
-
 
         // 추방된 경우
         if (_joinedLobby.Players[0].Data == null)
@@ -498,7 +508,7 @@ public class LobbyManager : MonoBehaviour
             {
                 name = _joinedLobby.Players[i].Data[_playerNameDataKey].Value,
                 ready = playerReady,
-                selectedTank  = selectedTank,
+                selectedTank = selectedTank,
             });
 
             // 모든 플레이어가 준비되었는지 확인
@@ -526,20 +536,6 @@ public class LobbyManager : MonoBehaviour
 
         mainLobbyUI.RefreshPlayersUI(playerIndex, gameReady);
         loadingUI.SetActive(_isGameStart);
-    }
-
-    async void DeleteLobby()
-    {
-        // 로비 삭제
-        try
-        {
-            await LobbyService.Instance.DeleteLobbyAsync(_joinedLobby.Id);
-            Debug.Log("Lobby deleted.");
-        }
-        catch (LobbyServiceException ex)
-        {
-            Debug.LogError(ex.Message);
-        }
     }
 
     async Task<string> CreateRelay()

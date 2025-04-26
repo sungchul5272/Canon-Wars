@@ -6,16 +6,16 @@ using UnityEngine.UI;
 
 public class ButtonTankSelect : MonoBehaviour
 {
+    public MainLobbyUI mainLobbyUI;
     public Sprite _textureRandom = null;
     public Image _imgTank = null;
+    public Button _btnSelectTank = null;
 
-    private Button _btnSelectTank = null;
     private Action<eTankType> _callback;
     private TankDataSO _tankData = null;
 
     public void Set(eTankType type, Action<eTankType> pCallback)
     {
-        _btnSelectTank = GetComponent<Button>();
         _btnSelectTank.onClick.AddListener(OnClick_Tank);
 
         _callback = pCallback;
@@ -30,8 +30,10 @@ public class ButtonTankSelect : MonoBehaviour
     {
         if (_callback != null)
         {
+            mainLobbyUI.SetTankSelectInteractable(false);
+
             // null ÀÎ°æ¿ì Random
-            if( _tankData == null ) 
+            if(_tankData == null) 
             {
                 _callback.Invoke(eTankType.Random);
             }

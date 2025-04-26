@@ -32,6 +32,7 @@ public class CreateLobbyUI : MonoBehaviour
 
     void OnEnable()
     {
+        nameInputField.text = string.Empty;
         createButton.interactable = false;
 
         // 뒤로가기

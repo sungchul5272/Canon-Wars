@@ -18,22 +18,23 @@ public class MainLobbyUI : MonoBehaviour
     public Button sessionEndedButton;
     public Button kickedButton;
     public Button backButton;
+    public Button mapChangeButton;
 
     [Header("Map")]
-    public RectTransform _contentMap = null;
-    public Image _imgMap = null;
-    public Button _btnMapLeft = null;
-    public Button _btnMapRight = null;
-    public TextMeshProUGUI _txtMapName = null;
+    public RectTransform contentMap;
+    public Image mapImage;
+    public Button leftMapButton;
+    public Button rightMapButton;
+    public TextMeshProUGUI mapNameText;
 
     [Header("Tank")]
-    public Transform _contentTank = null;
-    public ButtonTankSelect _tankSelectPrefab = null;
+    public Transform contentTank;
+    public ButtonTankSelect tankSelectButtonPrefab;
 
     List<PlayerSlotUI> _playerSlots = new();
+    List<Button> _tankSelectButtons = new();
 
-    private bool _isInitMapSelect = false;
-    private bool _isInitTankSelect = false;
+    eMapType _changedMapType = eMapType.Random;
 
     void Start()
     {
@@ -72,6 +73,23 @@ public class MainLobbyUI : MonoBehaviour
             kickedUI.SetActive(false);
             LeaveMainLobbyUI();
         });
+
+        // 맵 변경 적용 버튼
+        mapChangeButton.onClick.AddListener(() =>
+        {
+            mapChangeButton.interactable = false;
+            leftMapButton.interactable = false;
+            rightMapButton.interactable = false;
+            ApplySelectedMap(_changedMapType);
+        });
+
+        // 맵 선택 화살표 버튼
+        leftMapButton.onClick.AddListener(OnClick_MapLeft);
+        rightMapButton.onClick.AddListener(OnClick_MapRight);
+
+        // 탱크 버튼 프리팹
+        InitMapSelect();
+        InitSelectTankButtons();
     }
 
     void OnEnable()
@@ -97,10 +115,102 @@ public class MainLobbyUI : MonoBehaviour
         });
     }
 
+    // 맵 선택창 세팅
+    void InitMapSelect()
+    {
+        // 위치 초기화
+        contentMap.offsetMin = new Vector2(0, -256f);
+
+        // 맵 이미지 인스턴스
+        for (int i = (int)eMapType.Valley; i < (int)eMapType.Max; i++)
+        {
+            Image img = Instantiate(mapImage, contentMap);
+            img.sprite = SODataManager.instance.GetMapData((eMapType)i)._mapSprite;
+        }
+    }
+
+    // 탱크 선택창 세팅
+    void InitSelectTankButtons()
+    {
+        tankSelectButtonPrefab.gameObject.SetActive(false);
+        for (int i = (int)eMapType.Random; i < (int)eTankType.Max; i++)
+        {
+            ButtonTankSelect btnTankSelect = Instantiate(tankSelectButtonPrefab, contentTank);
+            btnTankSelect.gameObject.SetActive(true);
+            btnTankSelect.Set((eTankType)i, GetSelectTankType);
+            _tankSelectButtons.Add(btnTankSelect._btnSelectTank);
+        }
+    }
+
+    void OnClick_MapLeft()
+    {
+        LobbyManager instance = LobbyManager.Instance;
+
+        // 맵
+        _changedMapType--;
+        if ((int)_changedMapType < (int)eMapType.Random)
+        {
+            _changedMapType = eMapType.Random;
+        }
+
+        // 위치
+        float moveX = contentMap.offsetMin.x + 512f;
+        contentMap.offsetMin = new Vector2(moveX, contentMap.offsetMin.y);
+
+        // 호스트에게만 화살표 버튼이 나오도록 
+        bool isLeftEnd = (int)_changedMapType == -1; //moveX >= 0f ? true : false;
+        leftMapButton.gameObject.SetActive(instance.IsLobbyHost && !isLeftEnd);
+        rightMapButton.gameObject.SetActive(instance.IsLobbyHost);
+
+        // 맵 이름
+        mapNameText.text = _changedMapType.ToString();
+
+        // 맵 변경 버튼 활성화 여부
+        mapChangeButton.gameObject.SetActive(_changedMapType != instance.selectedMapType);
+    }
+
+    void OnClick_MapRight()
+    {
+        LobbyManager instance = LobbyManager.Instance;
+
+        // 맵
+        _changedMapType++;
+        if ((int)_changedMapType >= (int)eMapType.Max)
+        {
+            _changedMapType = eMapType.Max - 1;
+        }
+
+        // 위치
+        float moveX = contentMap.offsetMin.x - 512f;
+        contentMap.offsetMin = new Vector2(moveX, contentMap.offsetMin.y);
+
+        // 호스트에게만 화살표 버튼이 나오도록 
+        leftMapButton.gameObject.SetActive(instance.IsLobbyHost);
+        bool isRightEnd = (int)_changedMapType == (int)eMapType.Max - 1; //moveX <= -2560f ? true : false;
+        rightMapButton.gameObject.SetActive(instance.IsLobbyHost && !isRightEnd);
+
+        // 맵 이름
+        mapNameText.text = _changedMapType.ToString();
+
+        // 맵 변경 버튼 활성화 여부
+        mapChangeButton.gameObject.SetActive(_changedMapType != instance.selectedMapType);
+    }
+
     public void EnterMainLobbyUI(string lobbyName, string lobbyCode)
     {
         // 로비 입장
         LobbyManager instance = LobbyManager.Instance;
+
+        // 탱크 랜덤으로 리셋
+        instance.selectedTankType = eTankType.Random;
+
+        // 맵 랜덤으로 리셋
+        contentMap.offsetMin = new Vector2(0, -256f);
+        _changedMapType = eMapType.Random;
+        instance.selectedMapType = eMapType.Random;
+        mapNameText.text = instance.selectedMapType.ToString();
+
+        // UI 리셋
         instance.createLobbyUI.gameObject.SetActive(false);
         instance.sortLobbyUI.gameObject.SetActive(false);
         gameObject.SetActive(true);
@@ -108,106 +218,9 @@ public class MainLobbyUI : MonoBehaviour
         lobbyCodeText.SetText(lobbyCode);
         playButton.gameObject.SetActive(instance.IsLobbyHost);
         readyToggle.gameObject.SetActive(!instance.IsLobbyHost);
-
-        SetMap(instance.IsLobbyHost);
-        SetSelectTank();
+        leftMapButton.gameObject.SetActive(false);
+        rightMapButton.gameObject.SetActive(instance.IsLobbyHost);
     }
-
-
-    // 맵 선택창 세팅
-    private void SetMap(bool isLobbyHost)
-    {
-        // 맵 초기화
-        LobbyManager.Instance.selectedMapType = eMapType.Random;
-
-        // 위치 초기화
-        _contentMap.offsetMin = new Vector2(0, -256f);
-
-        // 맵 이미지 인스턴스
-        if (_isInitMapSelect == false)
-        {
-            _isInitMapSelect = true;
-
-            for (int i = (int)eMapType.Valley; i < (int)eMapType.Max; i++)
-            {
-                Image img = Instantiate(_imgMap, _contentMap);
-                img.sprite = SODataManager.instance.GetMapData((eMapType)i)._mapSprite;
-            }
-        }
-
-        _btnMapLeft.gameObject.SetActive(false);
-        _btnMapRight.gameObject.SetActive(isLobbyHost);
-
-        _btnMapLeft.onClick.AddListener(OnClick_MapLeft);
-        _btnMapRight.onClick.AddListener(OnClick_MapRight);
-    }
-
-    private void OnClick_MapLeft()
-    {
-        LobbyManager instance = LobbyManager.Instance;
-
-        // 맵
-        int nextIndex = (int)instance.selectedMapType - 1;
-        instance.selectedMapType = (eMapType)nextIndex;
-
-        // 위치
-        float moveX = _contentMap.offsetMin.x + 512f;
-        _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
-
-        // 호스트에게만 화살표 버튼이 나오도록 
-        bool isLeftEnd = moveX >= 0f ? true : false;
-        _btnMapLeft.gameObject.SetActive(instance.IsLobbyHost && !isLeftEnd);
-
-        _btnMapRight.gameObject.SetActive(instance.IsLobbyHost);
-
-        // 이름
-        _txtMapName.text = instance.selectedMapType.ToString();
-
-        // 변경 반영
-        GetSelectMapType();
-    }
-
-    private void OnClick_MapRight()
-    {
-        LobbyManager instance = LobbyManager.Instance;
-
-        int nextIndex = (int)instance.selectedMapType + 1;
-        instance.selectedMapType = (eMapType)nextIndex;
-
-        float moveX = _contentMap.offsetMin.x - 512f;
-        _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
-
-        _btnMapLeft.gameObject.SetActive(instance.IsLobbyHost);
-
-        bool isRightEnd = moveX <= -2560f ? true : false;
-        _btnMapRight.gameObject.SetActive(instance.IsLobbyHost && !isRightEnd);
-
-        _txtMapName.text = instance.selectedMapType.ToString();
-
-        // 변경 반영
-        GetSelectMapType();
-    }
-
-    // 탱크 선택창 세팅
-    private void SetSelectTank()
-    {
-        _tankSelectPrefab.gameObject.SetActive(false);
-        LobbyManager.Instance.selectedTankType = eTankType.Random;
-
-        if (_isInitTankSelect == false)
-        {
-            for (int i = (int)eMapType.Random; i < (int)eTankType.Max; i++)
-            {
-                ButtonTankSelect btnTankSelect = Instantiate(_tankSelectPrefab, _contentTank);
-                btnTankSelect.gameObject.SetActive(true);
-
-                btnTankSelect.Set((eTankType)i, GetSelectTankType);
-            }
-
-            _isInitTankSelect = true;
-        }
-    }
-
 
     public void LeaveMainLobbyUI()
     {
@@ -246,6 +259,15 @@ public class MainLobbyUI : MonoBehaviour
         readyToggle.interactable = readyToggle.isOn == LobbyManager.Instance.LobbyPlayerDatas[playerIndex].ready;
         playButton.interactable = gameReady;
         playerScrollView.gameObject.SetActive(true);
+        SetTankSelectInteractable(true);
+
+        if (instance.IsLobbyHost && _changedMapType == instance.selectedMapType)
+        {
+            leftMapButton.interactable = true;
+            rightMapButton.interactable = true;
+            mapChangeButton.interactable = true;
+            mapChangeButton.gameObject.SetActive(false);
+        }
     }
 
     public void ShowSessionEndedUI()
@@ -272,6 +294,25 @@ public class MainLobbyUI : MonoBehaviour
         }
     }
 
+    public void ShowSelectedMap(eMapType mapType)
+    {
+        LobbyManager instance = LobbyManager.Instance;
+        instance.selectedMapType = mapType;
+
+        float moveX = -512f * ((int)instance.selectedMapType + 1);
+        contentMap.offsetMin = new Vector2(moveX, contentMap.offsetMin.y);
+
+        mapNameText.text = instance.selectedMapType.ToString();
+    }
+
+    public void SetTankSelectInteractable(bool value)
+    {
+        for (int i = 0; i < _tankSelectButtons.Count; i++)
+        {
+            _tankSelectButtons[i].interactable = value;
+        }
+    }
+
     void ShowPlayerSlot(PlayerSlotUI playerSlot, int i)
     {
         LobbyManager instance = LobbyManager.Instance;
@@ -281,27 +322,16 @@ public class MainLobbyUI : MonoBehaviour
         playerSlot.ShowPlayerTank(instance.LobbyPlayerDatas[i].selectedTank);
     }
 
-    private void GetSelectTankType(eTankType tankType)
+    void GetSelectTankType(eTankType tankType)
     {
         LobbyManager instance = LobbyManager.Instance;
         instance.selectedTankType = tankType;
         instance.ChangeTank(instance.selectedTankType);
     }
 
-    private void GetSelectMapType()
+    void ApplySelectedMap(eMapType mapType)
     {
         LobbyManager instance = LobbyManager.Instance;
-        instance.ChangeMap(instance.selectedMapType);
-    }
-
-    public void ShowSelectedMap(eMapType mapType)
-    {
-        LobbyManager instance = LobbyManager.Instance;
-        instance.selectedMapType = mapType;
-
-        float moveX = -512f * ((int)instance.selectedMapType + 1);
-        _contentMap.offsetMin = new Vector2(moveX, _contentMap.offsetMin.y);
-
-        _txtMapName.text = instance.selectedMapType.ToString();
+        instance.ChangeMap(mapType);
     }
 }
