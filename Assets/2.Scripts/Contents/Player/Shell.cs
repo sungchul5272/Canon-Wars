@@ -26,6 +26,8 @@ public class Shell : NetworkBehaviour
     protected BoxCollider2D _collider2D = null;
     private NetworkObject _networkObject = null;
 
+    private NetworkVariable<bool> _isShellMapOut = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
     private int _damage = 20;
     private float _endTime = 0f;
     private float _power = 1f;
@@ -37,6 +39,15 @@ public class Shell : NetworkBehaviour
         _collider2D = GetComponent<BoxCollider2D>();
         _rb2D = GetComponent<Rigidbody2D>();
         _networkObject = GetComponent<NetworkObject>();
+
+        // 맵 밖으로 나간 경우 클라이언트쪽에 할당 해제 시키기
+        _isShellMapOut.OnValueChanged += (prevValue, changeValue) =>
+        {
+            if (changeValue == true && IngameManager.Instance.CurShellTrans != null)
+            {
+                IngameManager.Instance.CurShellTrans = null;
+            }
+        };
     }
 
     public void Init()
@@ -98,6 +109,9 @@ public class Shell : NetworkBehaviour
 
         Vector2 mapSize = GameInitializer.Instance.GetMapSize();
 
+        if (IngameManager.Instance.CurShellTrans == null)
+            return;
+
         // 포탄이 양 옆, 하단을 넘어갔는지 확인하기 (위는 제외)
         if(transform.position.x < -mapSize.x / 2f || transform.position.x > mapSize.x / 2f || transform.position.y < -mapSize.y / 2f)
         {
@@ -113,6 +127,10 @@ public class Shell : NetworkBehaviour
         // 발사
         Vector2 fireDir = transform.right * Mathf.Sign(transform.localScale.x);
         _rb2D.AddForce(fireDir * _power, ForceMode2D.Impulse);
+
+        // 값 초기화
+        if (IsServer)
+            _isShellMapOut.Value = false;
     }
 
     public virtual void CheckExplosion()
@@ -132,8 +150,6 @@ public class Shell : NetworkBehaviour
             CheckExplosionClientRpc(colliderCenter);
         }
     }
-
-
  
     [ClientRpc]
     private void CheckExplosionClientRpc(Vector2 colliderCenter)
@@ -185,6 +201,10 @@ public class Shell : NetworkBehaviour
     {
         // 카메라가 더이상 포탄을 안따라가도록
         IngameManager.Instance.CurShellTrans = null;
+
+        // 클라이언트쪽에서도 해제시키도록
+        if(IsServer)
+            _isShellMapOut.Value = true;
 
         // 충돌한 경우에만 Pool
         NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
