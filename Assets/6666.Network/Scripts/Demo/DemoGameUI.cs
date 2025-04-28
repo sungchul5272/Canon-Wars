@@ -1,48 +1,37 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class DemoGameUI : MonoBehaviour
 {
-    public Button leaveButton;
-    public Button endTurnButton;
-    public Button endGameButton;
-
-    NetworkVariable<int> turnIndex = new();
+    //public Button leaveButton;
+    public Button BackToLobbyButton;
 
     void Start()
     {
-        leaveButton.onClick.AddListener(() =>
-        {
-            LeaveGame();
-            Debug.Log("Leave game.");
-        });
+        //leaveButton.onClick.AddListener(() =>
+        //{
+        //    LeaveGame();
+        //    Debug.Log("Leave game.");
+        //});
 
-        endTurnButton.onClick.AddListener(() =>
+        BackToLobbyButton.onClick.AddListener(() =>
         {
-            EndTurn();
-            Debug.Log("End turn.");
-        });
-
-        endGameButton.onClick.AddListener(() =>
-        {
-            EndGame();
-            Debug.Log("End game.");
+            BackToLobby();
         });
     }
 
-    void LeaveGame()
+    //void LeaveGame()
+    //{
+    //    NetworkManager.Singleton.Shutdown();
+    //}
+
+    void BackToLobby()
     {
-        NetworkManager.Singleton.Shutdown();
-    }
-
-    void EndTurn()
-    {
-
-    }
-
-    void EndGame()
-    {
-
+        Debug.Log("Back to lobby.");
+        // ∞‘¿” æ¿ ∑ŒµÂ
+        NetworkManager.Singleton.SceneManager.LoadScene("2.LobbyScene", LoadSceneMode.Single);
+        //NetworkManager.Singleton.Shutdown();
     }
 }
