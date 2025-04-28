@@ -72,9 +72,6 @@ public class LobbyManager : NetworkBehaviour
         _joinedLobby = null;
         _isGameStart = false;
 
-        // 유니티 서비스 로그인
-        LogInUnityService();
-
         // 플레이어 아이디 부여
         if (FirebaseManager._instance != null)
         {
@@ -82,8 +79,11 @@ public class LobbyManager : NetworkBehaviour
         }
         else
         {
-            _playerName = $"player {Random.Range(0, 100)}";
+            Debug.LogError("FirebaseManager가 없습니다.");
         }
+
+        // 유니티 서비스 로그인
+        LogInUnityService();
 
         // 시작하기
         startButton.onClick.AddListener(() =>
@@ -154,18 +154,26 @@ public class LobbyManager : NetworkBehaviour
         mainLobbyUI.gameObject.SetActive(true);
         if (IsServer)
         {
-            CreateLobby(EGameMode.Mode1vs1, "GameEndedAndTest", false, true);
+            // TODO : 이 정보들이 저장되어야 함
+            EGameMode gameMode = EGameMode.Mode1vs1;
+            string lobbyName = "GameEndedAndTest";
+            bool isPrivate = false;
+
+            // 호스트는 로비 생성
+            CreateLobby(gameMode, lobbyName, isPrivate, true);
         }
     }
 
     [ClientRpc]
     void JoinLobbyClientRpc(string lobbyCode)
     {
+        // 호스트를 제외하고 로비 재참가
         if (!IsServer)
         {
             JoinLobby(lobbyCode, -1);
         }
 
+        // 로비 집합 후 넷코드 종료
         NetworkManager.Singleton.Shutdown();
     }
 
@@ -181,12 +189,13 @@ public class LobbyManager : NetworkBehaviour
                 Player = GetPlayer(true),
                 Data = new Dictionary<string, DataObject>
                 {
-                    // 게임 모드
+                    // 게임 모드는 로비 밖에서도 알 수 있도록 공개
                     { _gameModeDataKey, new DataObject(DataObject.VisibilityOptions.Public, gameMode.ToString(), DataObject.IndexOptions.S1) },
 
                     // 로비 멤버에게만 게임 시작 여부 공개
                     { _gameStartDataKey, new DataObject(DataObject.VisibilityOptions.Member, "0") },
 
+                     // 로비 멤버에게만 맵 공개
                     {_gameMapDataKey,  new DataObject(DataObject.VisibilityOptions.Member, eMapType.Random.ToString()) },
                 }
             });
