@@ -133,8 +133,8 @@ public class CameraController : MonoBehaviour
     private void MoveCameraAroundMap()
     {
         // 화면 내에서만 인식하도록
-        if (Input.mousePosition.x < 0 || Input.mousePosition.x > Screen.width ||
-            Input.mousePosition.y < 0 || Input.mousePosition.y > Screen.height)
+        if (Input.mousePosition.x < -1 || Input.mousePosition.x > Screen.width+1 ||
+            Input.mousePosition.y < -1 || Input.mousePosition.y > Screen.height+1)
         {
             return;
         }
