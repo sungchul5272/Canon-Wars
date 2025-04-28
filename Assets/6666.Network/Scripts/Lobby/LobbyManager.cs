@@ -43,7 +43,7 @@ public class LobbyManager : MonoBehaviour
     public List<LobbyData> PublicLobbyDatas { get; private set; } = new();
     public List<PlayerData> LobbyPlayerDatas { get; private set; } = new();
 
-    public bool IsLobbyHost => _joinedLobby.HostId == AuthenticationService.Instance.PlayerId;
+    public bool IsLobbyHost => _joinedLobby != null && (_joinedLobby.HostId == AuthenticationService.Instance.PlayerId);
 
     public eMapType selectedMapType = eMapType.Random;
     public eTankType selectedTankType = eTankType.Random;
