@@ -50,7 +50,7 @@ public class LobbyManager : MonoBehaviour
 
     Lobby _joinedLobby;
 
-    string _playerName;
+    string _playerNickname;
     string _playerNameDataKey = "PlayerName";
     string _playerReadyDataKey = "PlayerReady";
     string _playerSelectTankDataKey = "PlayerSelectTank";       // 선택한 탱크
@@ -81,7 +81,14 @@ public class LobbyManager : MonoBehaviour
                 Debug.Log($"Signed in: {AuthenticationService.Instance.PlayerId}.");
             };
 
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
+            else
+            {
+                Debug.Log(" 이미 로그인된 상태입니다.");
+            }
         }
         catch (AuthenticationException ex)
         {
@@ -91,11 +98,11 @@ public class LobbyManager : MonoBehaviour
         // 플레이어 아이디 부여
         if (FirebaseManager._instance != null)
         {
-            _playerName = FirebaseManager._instance.userVO.UserID;
+            _playerNickname = FirebaseManager._instance.userVO.NickName;
         }
         else
         {
-            _playerName = $"player {Random.Range(0, 100)}";
+            _playerNickname = $"player {Random.Range(0, 100)}";
         }
 
         // 시작하기
@@ -275,7 +282,7 @@ public class LobbyManager : MonoBehaviour
             try
             {
                 await LobbyService.Instance.RemovePlayerAsync(_joinedLobby.Id, AuthenticationService.Instance.PlayerId);
-                Debug.Log($"{_playerName} left the lobby.");
+                Debug.Log($"{_playerNickname} left the lobby.");
             }
             catch (LobbyServiceException ex)
             {
@@ -599,7 +606,7 @@ public class LobbyManager : MonoBehaviour
             Data = new Dictionary<string, PlayerDataObject>
             {
                 // 로비 멤버에게만 플레이어 이름 공개
-                { _playerNameDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, _playerName) },
+                { _playerNameDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, _playerNickname) },
 
                 // 로비 멤버에게만 준비 상태 공개
                 { _playerReadyDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, isHost? "1" : "0") },

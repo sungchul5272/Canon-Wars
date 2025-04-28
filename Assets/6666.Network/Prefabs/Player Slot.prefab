@@ -575,7 +575,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 5592857641146201986}
-  nameText: {fileID: 7522102798446527729}
+  nickNameText: {fileID: 7522102798446527729}
   readyToggle: {fileID: 8503680777519025983}
   profileButton: {fileID: 4419814044377369328}
   kickButton: {fileID: 3819935139006007275}

@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 public class IngameManager : NetworkBehaviour
 {
@@ -62,7 +63,7 @@ public class IngameManager : NetworkBehaviour
         _netWindForce.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 바람 세기 변경: {prev} → {next}");
-            SetWindUIClientRpc();
+            SetWindUIClientRpc(next);
         };
 
         //if (IsClient && !IsServer)
@@ -108,16 +109,11 @@ public class IngameManager : NetworkBehaviour
     //    return true;
     //}
 
-    [ClientRpc]
-    void SetWindUIClientRpc()
-    {
-        IngameUIController.Instance.SetWind(_netWindForce.Value);
-    }
 
     public void StartGame()
     {
+        GetRandomWindForce();
         _netTurnTimer.Value = _turnTime;
-
         _isGameStarted = true;
     }
 
@@ -189,6 +185,7 @@ public class IngameManager : NetworkBehaviour
             Debug.Log("게임 종료됨 턴이동 금지");
             yield break;
         }
+        GetRandomWindForce();
 
         // 턴 이동
         _isTurnWait = false;
@@ -212,6 +209,24 @@ public class IngameManager : NetworkBehaviour
 
         _netTurnTimer.Value = _turnTime;
         _isGameStarted = true;
+    }
+
+    public void GetRandomWindForce()
+    {
+        if (IsServer)
+        {
+            float randomWind = Mathf.Round(Random.Range(-_windForceMax, _windForceMax) * 100f) / 100f;
+            _netWindForce.Value = randomWind;
+            Debug.Log($"[IngameManager] 새로운 바람 설정: {randomWind}");
+
+            SetWindUIClientRpc(randomWind);
+        }
+    }
+
+    [ClientRpc]
+    void SetWindUIClientRpc(float windForce)
+    {
+        IngameUIController.Instance.SetWind(windForce);
     }
 
     [ClientRpc]
@@ -338,8 +353,11 @@ public class IngameManager : NetworkBehaviour
 
         _alreadySavedBattleInfo = true;
 
-        Debug.Log("[NotifyGameEndClientRpc] 호출됨");
+        _ = HandleGameEndResultAsync(winnerId);
+    }
 
+    private async Task HandleGameEndResultAsync(ulong winnerId)
+    {
         string resultKey = "";
 
         if (winnerId == ulong.MaxValue)
@@ -358,17 +376,25 @@ public class IngameManager : NetworkBehaviour
             resultKey = "패";
         }
 
-        FirebaseManager._instance.Update_UserBattleInfo();
+        bool uploadSuccess = await FirebaseManager._instance.Update_UserBattleInfoAsync();
 
-        if (ResultUI.Instance != null)
+        if (uploadSuccess)
         {
-            ResultUI.Instance.ShowResult(resultKey);
+            Debug.Log("Firebase 저장 완료");
+
+            if (ResultUI.Instance != null)
+            {
+                ResultUI.Instance.ShowResult(resultKey);
+            }
         }
         else
         {
-            Debug.LogError("ResultUI.Instance가 null입니다!");
+            Debug.LogError("Firebase 저장 실패");
         }
     }
+
+
+
 
     public float GetTurnTime()
     {

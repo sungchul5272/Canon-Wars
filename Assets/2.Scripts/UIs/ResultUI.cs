@@ -8,28 +8,30 @@ public class ResultUI : MonoBehaviour
 
     [SerializeField]  Text _resultText;
     [SerializeField]  Button _confirmButton;
+    [SerializeField] GameObject _resultUI;
 
     private void Awake()
     {
+        Debug.Log("[ResultUI] Awake 호출됨");
+
         if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
-
-        gameObject.SetActive(false);
-
-        _confirmButton.onClick.RemoveAllListeners();
-        _confirmButton.onClick.AddListener(() =>
         {
-            SceneManager.LoadScene("2.LobbyScene");
-        });
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+        _confirmButton.onClick.RemoveAllListeners();
+        _confirmButton.onClick.AddListener(OnClickConfirmButton);
+
     }
 
     public void ShowResult(string resultType)
     {
         Debug.Log($"[ResultUI] ShowResult 호출됨: {resultType}");
 
-        gameObject.SetActive(true);
+        _resultUI.SetActive(true);
 
         switch (resultType)
         {
@@ -46,5 +48,12 @@ public class ResultUI : MonoBehaviour
                 _resultText.text = "결과 알 수 없음";
                 break;
         }
+    }
+
+    private void OnClickConfirmButton()
+    {
+        Debug.Log("[ResultUI] 확인 버튼 클릭됨, 로비로 이동");
+
+        SceneManager.LoadScene("2.LobbyScene");
     }
 }

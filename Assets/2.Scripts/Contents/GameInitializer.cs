@@ -17,6 +17,10 @@ public class GameInitializer : NetworkBehaviour
     [SerializeField] Image _myTankImage;
     [SerializeField] Text _enemyNickText;
     [SerializeField] Image _enemyTankImage;
+    [SerializeField]  Text _myWinRateText;
+    [SerializeField] Text _enemyWinRateText;
+    [SerializeField]  Image _mapBackgroundImage;
+    [SerializeField]  List<Sprite> _mapBackgroundSprites;
 
     [Header("맵 스포너")]
     [SerializeField] private MapSpawner _mapSpawner;
@@ -117,6 +121,7 @@ public class GameInitializer : NetworkBehaviour
 
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+            UpdateLoadingMapBackground(_netMapIndex.Value);
             //_mapLoadComplete.Add(true);
             Debug.Log("[GameInitializer] 맵 생성 완료");
             var spawnList = _mapSpawner.GetSpawnPosPList();
@@ -135,6 +140,7 @@ public class GameInitializer : NetworkBehaviour
 
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+            UpdateLoadingMapBackground(_netMapIndex.Value);
 
             //// 맵 로드 완료
             //ReportMapLoadedServerRpc();
@@ -209,6 +215,22 @@ public class GameInitializer : NetworkBehaviour
     //{
     //    _camerInitComplete.Add(true); // 요청
     //}
+    private void UpdateLoadingMapBackground(int mapIndex)
+    {
+        if (_mapBackgroundSprites == null || _mapBackgroundSprites.Count == 0)
+            return;
+
+        if (mapIndex >= 0 && mapIndex < _mapBackgroundSprites.Count)
+        {
+            _mapBackgroundImage.sprite = _mapBackgroundSprites[mapIndex];
+            _mapBackgroundImage.color = Color.white;
+            Debug.Log($"[GameInitializer] 로딩창 배경 변경 완료: {((eMapType)mapIndex).ToString()}");
+        }
+        else
+        {
+            Debug.LogWarning("[GameInitializer] 잘못된 맵 인덱스입니다.");
+        }
+    }
 
     [ServerRpc(RequireOwnership = false)]
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
@@ -338,15 +360,65 @@ public class GameInitializer : NetworkBehaviour
             }
         }
 
-        Debug.Log($"[클라이언트] 내 정보 UI 세팅 - 닉네임: {nick}, 탱크: {tankKey}");
+        // 닉네임 표시 끝나고 승률 따로 표시
+        float myWinRate = CalculateMyWinRate();
+        _myWinRateText.text = $"승률 {myWinRate:F1}%";
+
+        SendMyWinRateServerRpc(nick, myWinRate);
+    }
+    private float CalculateMyWinRate()
+    {
+        int win = 0, lose = 0, draw = 0;
+
+        if (FirebaseManager._instance.userVO.BattleInfos != null)
+        {
+            foreach (var info in FirebaseManager._instance.userVO.BattleInfos)
+            {
+                switch (info.result)
+                {
+                    case "승":
+                        win++;
+                        break;
+                    case "패":
+                        lose++;
+                        break;
+                    case "무":
+                        draw++;
+                        break;
+                }
+            }
+        }
+
+        int totalGames = win + lose + draw;
+        if (totalGames == 0) return 0f;
+
+        return (float)win / totalGames * 100f;
     }
 
-    //[ClientRpc]
-    //void CloseLoadingUIClientRpc()
-    //{
-    //    _loadingUI.SetActive(false);
-    //    Debug.Log("[GameInitializer] 초기화 완료! 로딩 UI 닫기");
+    [ServerRpc(RequireOwnership = false)]
+    private void SendMyWinRateServerRpc(string nick, float winRate, ServerRpcParams rpcParams = default)
+    {
+        ulong senderId = rpcParams.Receive.SenderClientId;
 
-    //    _ingameUI.gameObject.SetActive(true);
-    //}
+        // 받은 승률을 다른 클라이언트에게 보내주기
+        foreach (var target in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (target != senderId)
+            {
+                SendEnemyWinRateClientRpc(nick, winRate, new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams { TargetClientIds = new[] { target } }
+                });
+            }
+        }
+        Debug.Log($"[서버] 나의 승률 전송 완료");
+    }
+
+    [ClientRpc]
+    private void SendEnemyWinRateClientRpc(string enemyNick, float enemyWinRate, ClientRpcParams clientRpcParams = default)
+    {
+        _enemyNickText.text = enemyNick;
+        _enemyWinRateText.text = $"승률 {enemyWinRate:F1}%";
+        Debug.Log($"[클라이언트] 상대 승률 수신 완료"); 
+    }
 }

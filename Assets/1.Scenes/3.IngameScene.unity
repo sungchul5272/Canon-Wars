@@ -581,7 +581,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3703855893
+  GlobalObjectIdHash: 931926751
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -611,7 +611,6 @@ MonoBehaviour:
   _postAttackDelay: 10
   _turnTimerText: {fileID: 0}
   _windForceMax: 10
-  _resultUI: {fileID: 1935456477}
 --- !u!4 &290170686
 Transform:
   m_ObjectHideFlags: 0
@@ -682,7 +681,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &337866707
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -990,6 +989,15 @@ MonoBehaviour:
   _myTankImage: {fileID: 1227457412}
   _enemyNickText: {fileID: 967385694}
   _enemyTankImage: {fileID: 1781745266}
+  _myWinRateText: {fileID: 971167010}
+  _enemyWinRateText: {fileID: 1709304036}
+  _mapBackgroundImage: {fileID: 1855695824}
+  _mapBackgroundSprites:
+  - {fileID: 21300000, guid: 246b02cdb7cad2f4c80e6b2ea71599ad, type: 3}
+  - {fileID: 2712053971802975647, guid: 03c638db8c421c24b8ce41e3fe0b219d, type: 3}
+  - {fileID: -8452540829195008579, guid: 57e37c06054663a459e9c28e4aba165e, type: 3}
+  - {fileID: -2918416809153958904, guid: 49ab562d0c464844b80588e68e34cbaf, type: 3}
+  - {fileID: -8190390459445649128, guid: 47dcdfa9281caaa48a102b01df9e836f, type: 3}
   _mapSpawner: {fileID: 413969504}
   _selectedMapType: -1
   _ingameUI: {fileID: 642844112}
@@ -1020,7 +1028,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 903064596
+  GlobalObjectIdHash: 4267311037
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2041,12 +2049,12 @@ GameObject:
   - component: {fileID: 971167010}
   - component: {fileID: 971167009}
   m_Layer: 5
-  m_Name: Win Lose
+  m_Name: WinRate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &971167008
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2114,7 +2122,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "0\uC2B9 0\uD328"
+  m_Text: 
 --- !u!222 &971167011
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2540,7 +2548,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1134834415
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3705,12 +3713,12 @@ GameObject:
   - component: {fileID: 1709304036}
   - component: {fileID: 1709304035}
   m_Layer: 5
-  m_Name: Win Lose
+  m_Name: WinRate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1709304034
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3778,7 +3786,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "0\uC2B9 0\uD328"
+  m_Text: 
 --- !u!222 &1709304037
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4032,8 +4040,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 4211293783942383924, guid: 64edbc587781bcb4b9adfc2cd2c0de8d, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -4106,7 +4114,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1935456478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4121,6 +4129,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _resultText: {fileID: 2072611975}
   _confirmButton: {fileID: 1380875085}
+  _resultUI: {fileID: 1134834414}
 --- !u!114 &1935456479
 MonoBehaviour:
   m_ObjectHideFlags: 0

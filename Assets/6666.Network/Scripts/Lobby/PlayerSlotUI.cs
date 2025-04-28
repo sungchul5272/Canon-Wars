@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class PlayerSlotUI : MonoBehaviour
 {
     public RectTransform rectTransform;
-    public TextMeshProUGUI nameText;
+    public TextMeshProUGUI nickNameText;
     public Toggle readyToggle;
     public Button profileButton;
     public Button kickButton;
@@ -41,7 +41,7 @@ public class PlayerSlotUI : MonoBehaviour
 
     public void ShowPlayerNameUI(string value)
     {
-        nameText.SetText(value);
+        nickNameText.SetText(value);
     }
 
     public void ShowReadyUI(bool value)

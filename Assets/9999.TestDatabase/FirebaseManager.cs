@@ -436,6 +436,40 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    public async Task<bool> Update_UserBattleInfoAsync()
+    {
+        string battleInfoTable_path = "UserBattleInfoSeat/" + userVO.UID;
+
+        Wrapper info = new Wrapper();
+        info.BattleDatas = userVO.BattleInfos.ToList();
+
+        for (int i = 0; i < info.BattleDatas.Count;)
+        {
+            if (info.BattleDatas[i].date == string.Empty)
+            {
+                info.BattleDatas.RemoveAt(i);
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        string json = JsonConvert.SerializeObject(info);
+
+        try
+        {
+            await token.Child(battleInfoTable_path).SetRawJsonValueAsync(json);
+            Debug.Log("User data uploaded successfully.");
+            return true;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error uploading user data: {e.Message}");
+            return false;
+        }
+    }
+
 
 
     /// <summary>

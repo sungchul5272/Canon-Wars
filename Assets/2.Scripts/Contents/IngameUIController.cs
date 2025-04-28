@@ -64,8 +64,6 @@ public class IngameUIController : MonoBehaviour
     // 바람 세기 및 방향 표시
     public void SetWind(float wind)
     {
-        _wind.SetActive(true);
-
         if (wind > 0)
             _windText.text = $"> {wind:F1}";
         else if (wind < 0)
