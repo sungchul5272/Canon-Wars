@@ -19,7 +19,7 @@ public enum EGameMode
     Mode2vs2
 }
 
-public class LobbyManager : MonoBehaviour
+public class LobbyManager : NetworkBehaviour
 {
     [Header("메뉴")]
     public GameObject startPanel;
@@ -67,26 +67,13 @@ public class LobbyManager : MonoBehaviour
         Instance = this;
     }
 
-    async void Start()
+    void Start()
     {
         _joinedLobby = null;
         _isGameStart = false;
 
-        // 익명으로 유니티 로그인
-        try
-        {
-            await UnityServices.InitializeAsync();
-            AuthenticationService.Instance.SignedIn += () =>
-            {
-                Debug.Log($"Signed in: {AuthenticationService.Instance.PlayerId}.");
-            };
-
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        }
-        catch (AuthenticationException ex)
-        {
-            Debug.LogError(ex.Message);
-        }
+        // 유니티 서비스 로그인
+        LogInUnityService();
 
         // 플레이어 아이디 부여
         if (FirebaseManager._instance != null)
@@ -133,7 +120,56 @@ public class LobbyManager : MonoBehaviour
         });
     }
 
-    public async void CreateLobby(EGameMode gameMode, string lobbyName, bool isPrivate)
+    async void LogInUnityService()
+    {
+        // 익명으로 유니티 로그인
+        try
+        {
+            await UnityServices.InitializeAsync();
+
+            // 이미 로그인 된 경우 경기가 끝나고 돌아온 것으로 간주
+            if (AuthenticationService.Instance.IsSignedIn)
+            {
+                SetSceneToMainLobby();
+                return;
+            }
+
+            AuthenticationService.Instance.SignedIn += () =>
+            {
+                Debug.Log($"Signed in: {AuthenticationService.Instance.PlayerId}.");
+            };
+
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+        catch (AuthenticationException ex)
+        {
+            Debug.LogError(ex.Message);
+        }
+    }
+
+    void SetSceneToMainLobby()
+    {
+        startPanel.SetActive(true);
+        startLobbyUI.gameObject.SetActive(false);
+        mainLobbyUI.gameObject.SetActive(true);
+        if (IsServer)
+        {
+            CreateLobby(EGameMode.Mode1vs1, "GameEndedAndTest", false, true);
+        }
+    }
+
+    [ClientRpc]
+    void JoinLobbyClientRpc(string lobbyCode)
+    {
+        if (!IsServer)
+        {
+            JoinLobby(lobbyCode, -1);
+        }
+
+        NetworkManager.Singleton.Shutdown();
+    }
+
+    public async void CreateLobby(EGameMode gameMode, string lobbyName, bool isPrivate, bool isRecreate)
     {
         try
         {
@@ -159,7 +195,13 @@ public class LobbyManager : MonoBehaviour
             ReadyPlayer(true);
             InvokeRepeating(nameof(MaintainLobby), _maintainLobbyTime, _maintainLobbyTime);
             InvokeRepeating(nameof(RefreshPlayers), _checkLobbyTime, _checkLobbyTime);
-            Debug.Log($"Created Lobby: {lobbyName}, Code: {_joinedLobby.LobbyCode}.");
+            Debug.Log($"Created Lobby: {lobbyName}, Code: {_joinedLobby.LobbyCode}, Host: {_joinedLobby.Players[0].Data[_playerNameDataKey].Value}.");
+
+            // 경기 종료 후 재생성할 경우
+            if (isRecreate)
+            {
+                JoinLobbyClientRpc(_joinedLobby.LobbyCode);
+            }
         }
         catch (LobbyServiceException ex)
         {
