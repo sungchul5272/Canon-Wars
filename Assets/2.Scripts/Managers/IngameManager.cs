@@ -141,7 +141,7 @@ public class IngameManager : NetworkBehaviour
         if (_netTurnTimer.Value <= 0f)
         {
             //ForceTurnEndClientRpc();
-            CurShellTrans = null;
+            //CurShellTrans = null;
             PlayerTurnEndServerRpc();
         }
     }
