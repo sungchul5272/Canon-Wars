@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
+using Unity.Collections;
 using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager;
@@ -67,6 +68,10 @@ public class PlayerController : NetworkBehaviour
 
     private NetworkObject _curSpawnedShell;
     public NetworkVariable<int> _hp = new(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString32Bytes> _NickName =
+        new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+
     private void Awake()
     {
         _rb2D = GetComponent<Rigidbody2D>();
@@ -86,6 +91,21 @@ public class PlayerController : NetworkBehaviour
         {
             _playerHpBar.value = Mathf.Clamp(newVal, 0, 100);
         };
+
+        if (IsOwner)
+        {
+            _NickName.Value = FirebaseManager._instance.userVO.NickName;
+            Debug.Log($"[OnNetworkSpawn] 내 닉네임 설정: {_NickName.Value}");
+        }
+
+        _NickName.OnValueChanged += (oldVal, newVal) =>
+        {
+            Debug.Log($"[OnValueChanged] 닉네임 변경 감지: {oldVal} -> {newVal}");
+            _playerNickName.text = newVal.ToString();
+        };
+
+        // 처음 값도 바로 UI에 반영
+        _playerNickName.text = _NickName.Value.ToString();
     }
 
     public void Init()
@@ -96,7 +116,7 @@ public class PlayerController : NetworkBehaviour
         // 예측 점 생성
         _predictionPoints = new GameObject[_predictionPointNum];
 
-        for(int i = 0; i < _predictionPointNum; i++)
+        for (int i = 0; i < _predictionPointNum; i++)
         {
             _predictionPoints[i] = Instantiate(_predictionPointPrefab, Vector3.zero, Quaternion.identity);
             _predictionPoints[i].transform.parent = this.transform;
@@ -112,15 +132,17 @@ public class PlayerController : NetworkBehaviour
         {
             Flip(-1);
         }
-    }
 
+
+    }
+  
     // Update is called once per frame
     private void Update()
     {
         if (CheckDead() == true)
         {
             // 죽음 이후 메소드 한번 실행
-            if(_bAfterDeadEvent == false)
+            if (_bAfterDeadEvent == false)
             {
                 _bAfterDeadEvent = true;
                 AfterDeadEvent();
@@ -167,7 +189,7 @@ public class PlayerController : NetworkBehaviour
         // 파워게이지 증가 시키기
         if (Input.GetKey(KeyCode.Space) && _isCanFire)
         {
-            if(_isFire == true)
+            if (_isFire == true)
                 _isFire = false;
 
             _curGauge += Time.deltaTime * _powerGaugeSpeed;
@@ -220,7 +242,7 @@ public class PlayerController : NetworkBehaviour
 
             // 포 각도 조절중에는 움직일 수 없음
             if (_dirY == 0 && _curFuel > 0f)
-               transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
+                transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
 
             if (_dirX != 0f)
             {
@@ -380,7 +402,11 @@ public class PlayerController : NetworkBehaviour
     {
 
         // 일정 높이에서 떨어지면 죽음 처리
-        if(transform.position.y <= DEAD_HEIGHT)
+        if (transform.position.y <= DEAD_HEIGHT)
+        {
+            _isDead = true;
+        }
+        else if (_hp.Value <= 0 && !_isDead)
         {
             _isDead = true;
         }
@@ -390,8 +416,7 @@ public class PlayerController : NetworkBehaviour
 
     private void AfterDeadEvent()
     {
-        // 일단 destroy
-        Destroy(gameObject);
+        IngameManager.Instance.NotifyDeathServerRpc();
     }
 
     private bool IsGround()
@@ -417,7 +442,7 @@ public class PlayerController : NetworkBehaviour
         RaycastHit2D rightHit = Physics2D.Raycast(ray2, direction, distance, LayerMask.GetMask("Ground"));
 
         //Linecast 
-        RaycastHit2D area = Physics2D.BoxCast(transform.position, new Vector2(_colider2D.radius * 2, _colider2D.radius * 2), 0f,direction, distance,LayerMask.GetMask("Ground"));
+        RaycastHit2D area = Physics2D.BoxCast(transform.position, new Vector2(_colider2D.radius * 2, _colider2D.radius * 2), 0f, direction, distance, LayerMask.GetMask("Ground"));
 
         Debug.DrawLine(ray1 + direction * distance, ray2 + direction * distance, Color.magenta);
 
@@ -426,8 +451,8 @@ public class PlayerController : NetworkBehaviour
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (!collision.gameObject.CompareTag("Ground")) 
-            return; 
+        if (!collision.gameObject.CompareTag("Ground"))
+            return;
 
         Vector2 averageNormal = Vector2.zero;
         int contactCount = collision.contactCount;
@@ -447,9 +472,9 @@ public class PlayerController : NetworkBehaviour
             float targetAngle = Mathf.Atan2(averageNormal.y, averageNormal.x) * Mathf.Rad2Deg - 90f;
 
             _isMoveAngle = CanMoveAngle(targetAngle);
- 
+
             if (_isMoveAngle)
-            {          
+            {
                 transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, targetAngle);
             }
         }
@@ -476,7 +501,7 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        for(int i = 0; i < _predictionPointNum; i++)
+        for (int i = 0; i < _predictionPointNum; i++)
         {
             _predictionPoints[i].transform.position = PredictionPointsPos(i * time);
             _predictionPoints[i].SetActive(true);
@@ -513,14 +538,14 @@ public class PlayerController : NetworkBehaviour
         Vector2 initialVelocity = force / mass;
 
         pos = (Vector2)_shellFireTrans.position + initialVelocity * time + Physics2D.gravity * (time * time) * 0.5f;
-        
+
         return pos;
     }
 
     public void ChangeSpriteOrder(int value)
     {
         _srBody.sortingOrder += value;
-        _srWheel.sortingOrder += value; 
+        _srWheel.sortingOrder += value;
         _srAritllery.sortingOrder += value;
     }
 
@@ -535,12 +560,6 @@ public class PlayerController : NetworkBehaviour
             IngameUIController.Instance.SetHP(_hp.Value);
             BroadcastHPToOthersClientRpc(_hp.Value);
         }
-
-        if (_hp.Value <= 0 && !_isDead)
-        {
-            _isDead = true;
-            IngameManager.Instance.NotifyDeathServerRpc();
-        }
     }
 
     [ClientRpc]
@@ -550,6 +569,12 @@ public class PlayerController : NetworkBehaviour
         {
             _playerHpBar.value = Mathf.Clamp(hp, 0, 100);
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ReportNicknameToServerRpc(string nick)
+    {
+        _NickName.Value = nick;
     }
 
     public int GetCurrentHP()

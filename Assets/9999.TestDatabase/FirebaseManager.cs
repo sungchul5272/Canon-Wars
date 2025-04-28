@@ -454,7 +454,16 @@ public class FirebaseManager : MonoBehaviour
     /// <param name="value">경기 결과 여부</param>
     public void addBattleInnfo(string value)
     {
-        userVO.BattleInfos.Add(new UserBattleInfo() { date = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss"), result = value });
+        if (userVO.BattleInfos == null)
+        {
+            userVO.BattleInfos = new List<UserBattleInfo>();
+        }
+
+        userVO.BattleInfos.Add(new UserBattleInfo
+        {
+            date = DateTime.Now.ToString("yyyy-MM-dd"),
+            result = value
+        });
     }
 }
 

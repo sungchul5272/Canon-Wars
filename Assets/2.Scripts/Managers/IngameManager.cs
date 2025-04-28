@@ -28,6 +28,7 @@ public class IngameManager : NetworkBehaviour
     bool _isGameStarted = false;
     //bool _isAttackResolving = false;
     bool _isTurnWait = false;
+    bool _alreadySavedBattleInfo = false;
 
     public Transform CurShellTrans { get; set; }
     //public PlayerController CurTurnPlayer { get; set; }
@@ -183,10 +184,18 @@ public class IngameManager : NetworkBehaviour
         // 약간의 지연 시간
         yield return new WaitForSeconds(TURN_END_TERM);
 
+        if (!_isGameStarted)
+        {
+            Debug.Log("게임 종료됨 턴이동 금지");
+            yield break;
+        }
+
         // 턴 이동
         _isTurnWait = false;
         MoveTurn();
     }
+
+
 
     private void MoveTurn()
     {
@@ -210,7 +219,11 @@ public class IngameManager : NetworkBehaviour
     {
         Debug.Log("현재 턴의 플레이어 탐색.");
 
-        CheckGameEndCondition();
+        if (CheckGameEndCondition())
+        {
+            Debug.Log("게임 지속");
+            return;
+        }
 
         var connectedClients = NetworkManager.Singleton.ConnectedClients;
         for (int i = 0; i < connectedClients.Count; i++)
@@ -285,8 +298,7 @@ public class IngameManager : NetworkBehaviour
 
         CheckGameEndCondition();
     }
-
-    void CheckGameEndCondition()
+    bool CheckGameEndCondition()
     {
         var alivePlayers = new List<NetworkObject>();
 
@@ -303,8 +315,12 @@ public class IngameManager : NetworkBehaviour
 
         if (alivePlayers.Count <= 1)
         {
+            Debug.Log("[CheckGameEndCondition] 게임 종료 조건 만족, EndGame 호출");
             EndGame(alivePlayers.Count == 1 ? alivePlayers[0].OwnerClientId : (ulong?)null);
+            return true;
         }
+
+        return false;
     }
 
     void EndGame(ulong? winnerClientId)
@@ -313,20 +329,44 @@ public class IngameManager : NetworkBehaviour
 
         _isGameStarted = false;
     }
+
     [ClientRpc]
     void NotifyGameEndClientRpc(ulong winnerId)
     {
+        if (_alreadySavedBattleInfo)
+            return;
+
+        _alreadySavedBattleInfo = true;
+
+        Debug.Log("[NotifyGameEndClientRpc] 호출됨");
+
+        string resultKey = "";
+
         if (winnerId == ulong.MaxValue)
         {
-            Debug.Log("무승부");
+            FirebaseManager._instance.addBattleInnfo("무");
+            resultKey = "무";
         }
         else if (NetworkManager.Singleton.LocalClientId == winnerId)
         {
-            Debug.Log("승리");
+            FirebaseManager._instance.addBattleInnfo("승");
+            resultKey = "승";
         }
         else
         {
-            Debug.Log("패배");
+            FirebaseManager._instance.addBattleInnfo("패");
+            resultKey = "패";
+        }
+
+        FirebaseManager._instance.Update_UserBattleInfo();
+
+        if (ResultUI.Instance != null)
+        {
+            ResultUI.Instance.ShowResult(resultKey);
+        }
+        else
+        {
+            Debug.LogError("ResultUI.Instance가 null입니다!");
         }
     }
 
