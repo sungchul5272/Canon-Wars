@@ -17,3 +17,4 @@ MonoBehaviour:
   mapType: 0
   mapSize: {x: 64, y: 31.2}
   _mapSprite: {fileID: 21300000, guid: 246b02cdb7cad2f4c80e6b2ea71599ad, type: 3}
+  sound: {fileID: 8300000, guid: 92332c9c8f588554590ea174ab04ab75, type: 3}
