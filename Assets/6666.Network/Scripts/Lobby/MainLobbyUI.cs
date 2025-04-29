@@ -125,7 +125,7 @@ public class MainLobbyUI : MonoBehaviour
         for (int i = (int)eMapType.Valley; i < (int)eMapType.Max; i++)
         {
             Image img = Instantiate(mapImage, contentMap);
-            img.sprite = SODataManager.instance.GetMapData((eMapType)i)._mapSprite;
+            img.sprite = SODataManager.instance.GetMapData((eMapType)i).mapSprite;
         }
     }
 

@@ -23,7 +23,7 @@ public class MapData : ScriptableObject
     public Vector2 mapSize = Vector2.zero;
 
     [Header("Image")]
-    public Sprite _mapSprite = null;
+    public Sprite mapSprite = null;
 
     [Header("Sound")]
     public AudioClip sound = null;
