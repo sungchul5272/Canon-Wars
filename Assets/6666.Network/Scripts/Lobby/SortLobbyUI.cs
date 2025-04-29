@@ -28,7 +28,7 @@ public class SortLobbyUI : MonoBehaviour
         // 비공개 로비 참가
         joinPrivateButton.onClick.AddListener(() =>
         {
-            LobbyManager.Instance.JoinLobby(lobbyCodeInputField.text, -1);
+            LobbyManager.Instance.JoinLobby(lobbyCodeInputField.text, -1, string.Empty);
         });
 
         // 로비 목록 새로고침

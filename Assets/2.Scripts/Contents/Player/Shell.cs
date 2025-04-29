@@ -28,7 +28,7 @@ public class Shell : NetworkBehaviour
 
     private NetworkVariable<bool> _isShellMapOut = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    private int _damage = 20;
+    //private int _damage = 20;
     private float _endTime = 0f;
     private float _power = 1f;
     private float _curWindForce = 0f;

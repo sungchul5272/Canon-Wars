@@ -2,8 +2,14 @@ using UnityEngine;
 
 public static class NetworkPlayerData
 {
-    public static eMapType selectedMapType = eMapType.Random;
-    public static eTankType selectedTank;
+    public static EGameMode GameMode { get; private set; }
+    public static eMapType SelectedMapType { get; private set; } = eMapType.Random;
+    public static eTankType SelectedTank { get; private set; }
+
+    public static string LobbyName { get; private set; }
+    public static string InternalLobbyCode { get; private set; }
+    public static bool IsPrivateLobby { get; private set; }
+    public static bool IsHost { get; private set; }
 
     static int _maxPlayer;
 
@@ -18,9 +24,14 @@ public static class NetworkPlayerData
         return _maxPlayer;
     }
 
-    public static void SetGameInfo(eMapType mapType, eTankType tankType)
+    public static void SetGameInfo(EGameMode gameMode, eMapType mapType, eTankType tankType, string lobbyName, string internalLobbyCode, bool isPrivateLobby, bool isHost)
     {
-        selectedMapType = mapType;
-        selectedTank = tankType;
+        GameMode = gameMode;
+        SelectedMapType = mapType;
+        SelectedTank = tankType;
+        LobbyName = lobbyName;
+        IsPrivateLobby = isPrivateLobby;
+        InternalLobbyCode = internalLobbyCode;
+        IsHost = isHost;
     }
 }

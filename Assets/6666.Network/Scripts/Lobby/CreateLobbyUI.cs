@@ -26,7 +26,7 @@ public class CreateLobbyUI : MonoBehaviour
         createButton.onClick.AddListener(() =>
         {
             EGameMode gameMode = (EGameMode)Enum.Parse(typeof(EGameMode), $"Mode{gameModeDropDown.options[gameModeDropDown.value].text}");
-            instance.CreateLobby(gameMode, nameInputField.text, privateToggle.isOn, false);
+            instance.CreateLobby(gameMode, nameInputField.text, privateToggle.isOn, string.Empty);
         });
     }
 

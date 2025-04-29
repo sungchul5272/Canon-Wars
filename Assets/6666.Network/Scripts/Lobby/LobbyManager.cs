@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -19,7 +20,7 @@ public enum EGameMode
     Mode2vs2
 }
 
-public class LobbyManager : NetworkBehaviour
+public class LobbyManager : MonoBehaviour
 {
     [Header("메뉴")]
     public GameObject startPanel;
@@ -49,17 +50,21 @@ public class LobbyManager : NetworkBehaviour
     public eTankType selectedTankType = eTankType.Random;
 
     Lobby _joinedLobby;
+    System.Random random = new System.Random();
+
+    readonly string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 대문자 알파벳과 숫자
 
     string _playerName;
     string _playerNameDataKey = "PlayerName";
     string _playerReadyDataKey = "PlayerReady";
-    string _playerSelectTankDataKey = "PlayerSelectTank";       // 선택한 탱크
+    string _playerSelectTankDataKey = "PlayerSelectTank";
     string _gameModeDataKey = "GameMode";
     string _gameStartDataKey = "GameStart";
-    string _gameMapDataKey = "SelectMap";                       // 선택한 맵
+    string _gameMapDataKey = "SelectMap";
+    string _internalLobbyCodeDataKey = "InternalLobbyCode";
     string _lobbyNotFoundError = "lobby not found";
     float _maintainLobbyTime = 20;
-    float _checkLobbyTime = 1.1f;
+    float _rateLimitTime = 1.1f;
     bool _isGameStart;
 
     void Awake()
@@ -130,13 +135,14 @@ public class LobbyManager : NetworkBehaviour
             // 이미 로그인 된 경우 경기가 끝나고 돌아온 것으로 간주
             if (AuthenticationService.Instance.IsSignedIn)
             {
+                Debug.Log("이미 로그인하였으므로 로비로 이동합니다.");
                 SetSceneToMainLobby();
                 return;
             }
 
             AuthenticationService.Instance.SignedIn += () =>
             {
-                Debug.Log($"Signed in: {AuthenticationService.Instance.PlayerId}.");
+                Debug.Log($"익명 로그인: {AuthenticationService.Instance.PlayerId}.");
             };
 
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
@@ -147,38 +153,106 @@ public class LobbyManager : NetworkBehaviour
         }
     }
 
-    void SetSceneToMainLobby()
+    async void SetSceneToMainLobby()
     {
+        // 메인 로비로 복귀
         startPanel.SetActive(true);
         startLobbyUI.gameObject.SetActive(false);
         mainLobbyUI.gameObject.SetActive(true);
-        if (IsServer)
+        if (NetworkPlayerData.IsHost)
         {
-            // TODO : 이 정보들이 저장되어야 함
-            EGameMode gameMode = EGameMode.Mode1vs1;
-            string lobbyName = "GameEndedAndTest";
-            bool isPrivate = false;
+            Debug.Log("복귀할 로비 재생성.");
 
             // 호스트는 로비 생성
-            CreateLobby(gameMode, lobbyName, isPrivate, true);
-        }
-    }
+            CreateLobby(NetworkPlayerData.GameMode, NetworkPlayerData.LobbyName, NetworkPlayerData.IsPrivateLobby, NetworkPlayerData.InternalLobbyCode);
 
-    [ClientRpc]
-    void JoinLobbyClientRpc(string lobbyCode)
-    {
-        // 호스트를 제외하고 로비 재참가
-        if (!IsServer)
+            // 연결된 네트워크가 있으면 종료
+            if (NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+        }
+        else
         {
-            JoinLobby(lobbyCode, -1);
-        }
+            Debug.Log("복귀할 로비 검색.");
+            string lobbyId;
+            while (true)
+            {
+                try
+                {
+                    QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync(new QueryLobbiesOptions
+                    {
+                        Filters = new List<QueryFilter>
+                        {
+                            // 동일한(EQ) 내부 코드만 표시
+                            new QueryFilter(QueryFilter.FieldOptions.S2, NetworkPlayerData.InternalLobbyCode, QueryFilter.OpOptions.EQ)
+                        },
+                    });
 
-        // 로비 집합 후 넷코드 종료
-        NetworkManager.Singleton.Shutdown();
+                    int lobbyCount = queryResponse.Results.Count;
+                    if (lobbyCount == 1)
+                    {
+                        Debug.Log("복귀할 로비 찾기 성공.");
+                        lobbyId = queryResponse.Results[0].Id;
+                        break;
+                    }
+                    else if (lobbyCount > 1)
+                    {
+                        Debug.LogWarning("이전 로비가 남아있습니다.");
+                    }
+
+                    await Task.Delay((int)(_rateLimitTime * 1000));  // 요청 대기
+                }
+                catch (LobbyServiceException ex)
+                {
+                    Debug.LogError(ex.Message);
+                }
+            }
+
+            Debug.Log("복귀할 로비 참가.");
+            JoinLobby(string.Empty, -1, lobbyId);
+        }
     }
 
-    public async void CreateLobby(EGameMode gameMode, string lobbyName, bool isPrivate, bool isRecreate)
+    public async void CreateLobby(EGameMode gameMode, string lobbyName, bool isPrivate, string internalCode)
     {
+        // 내부 코드가 없으면 생성
+        if (internalCode == string.Empty)
+        {
+            while (true)
+            {
+                string randomCode = GetRandomCode();
+                try
+                {
+                    // 중복된 코드를 가진 로비 표시
+                    QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync(new QueryLobbiesOptions
+                    {
+                        Filters = new List<QueryFilter>
+                    {
+                        // 동일한(EQ) 내부 코드만 표시
+                        new QueryFilter(QueryFilter.FieldOptions.S2, randomCode, QueryFilter.OpOptions.EQ)
+                    },
+                    });
+
+                    // 중복된 코드의 로비가 없으면 해당 코드로 결정
+                    if (queryResponse.Results.Count <= 0)
+                    {
+                        Debug.Log("내부 코드 생성 완료.");
+                        internalCode = randomCode;
+                        break;
+                    }
+                    else
+                    {
+                        Debug.Log("중복된 내부 코드 로비 발견, 코드 재생성 시작.");
+                    }
+                }
+                catch (LobbyServiceException ex)
+                {
+                    Debug.LogError(ex.Message);
+                }
+            }
+        }
+
         try
         {
             // 로비 생성
@@ -192,30 +266,39 @@ public class LobbyManager : NetworkBehaviour
                     // 게임 모드는 로비 밖에서도 알 수 있도록 공개
                     { _gameModeDataKey, new DataObject(DataObject.VisibilityOptions.Public, gameMode.ToString(), DataObject.IndexOptions.S1) },
 
-                    // 로비 멤버에게만 게임 시작 여부 공개
+                    // 게임 시작 여부
                     { _gameStartDataKey, new DataObject(DataObject.VisibilityOptions.Member, "0") },
 
-                     // 로비 멤버에게만 맵 공개
+                    // 맵
                     {_gameMapDataKey,  new DataObject(DataObject.VisibilityOptions.Member, eMapType.Random.ToString()) },
+
+                    // 내부 커스텀 로비 코드
+                    {_internalLobbyCodeDataKey,  new DataObject(DataObject.VisibilityOptions.Member, internalCode, DataObject.IndexOptions.S2) },
                 }
             });
 
             mainLobbyUI.EnterMainLobbyUI(lobbyName, _joinedLobby.LobbyCode);
             ReadyPlayer(true);
             InvokeRepeating(nameof(MaintainLobby), _maintainLobbyTime, _maintainLobbyTime);
-            InvokeRepeating(nameof(RefreshPlayers), _checkLobbyTime, _checkLobbyTime);
-            Debug.Log($"Created Lobby: {lobbyName}, Code: {_joinedLobby.LobbyCode}, Host: {_joinedLobby.Players[0].Data[_playerNameDataKey].Value}.");
-
-            // 경기 종료 후 재생성할 경우
-            if (isRecreate)
-            {
-                JoinLobbyClientRpc(_joinedLobby.LobbyCode);
-            }
+            InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
+            Debug.Log($"생성된 로비: {lobbyName}, 코드: {_joinedLobby.LobbyCode}, 내부 코드: {_joinedLobby.Data[_internalLobbyCodeDataKey].Value}.");
         }
         catch (LobbyServiceException ex)
         {
             Debug.LogError(ex.Message);
         }
+    }
+
+    string GetRandomCode(int length = 6)
+    {
+        // 무작위 코드 생성
+        StringBuilder stringBuilder = new(length);
+        for (int i = 0; i < length; i++)
+        {
+            stringBuilder.Append(chars[random.Next(chars.Length)]);
+        }
+
+        return stringBuilder.ToString();
     }
 
     public async void RefreshPublicLobbies(EGameMode gameMode)
@@ -227,10 +310,10 @@ public class LobbyManager : NetworkBehaviour
             {
                 Filters = new List<QueryFilter>
                 {
-                    // 빈 자리가 0 보다 큰 로비만 표시
+                    // 빈 자리가 0 보다 큰(GT) 로비만 표시
                     new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT),
 
-                    // 동일한 게임 모드만 표시
+                    // 동일한(EQ) 게임 모드만 표시
                     new QueryFilter(QueryFilter.FieldOptions.S1, gameMode.ToString(), QueryFilter.OpOptions.EQ)
                 },
                 Order = new List<QueryOrder>
@@ -255,7 +338,7 @@ public class LobbyManager : NetworkBehaviour
                     selectedMap = mayType,
                 });
 
-                Debug.Log($"Lobbies found:{lobby.Name}, Mode: {lobby.Data[_gameModeDataKey].Value}.");
+                Debug.Log($"찾은 로비:{lobby.Name}, 게임 모드: {lobby.Data[_gameModeDataKey].Value}.");
             }
 
             sortLobbyUI.RefreshLobbiesUI();
@@ -266,15 +349,15 @@ public class LobbyManager : NetworkBehaviour
         }
     }
 
-    public async void JoinLobby(string lobbyCode, int index)
+    public async void JoinLobby(string lobbyCode, int index, string recreateId)
     {
         try
         {
             loadingUI.SetActive(true);
-            if (lobbyCode == null)
+            if (lobbyCode == string.Empty)
             {
                 // 공개 로비 참가
-                _joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync(PublicLobbyDatas[index].id, new JoinLobbyByIdOptions
+                _joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync((recreateId == string.Empty)? PublicLobbyDatas[index].id : recreateId, new JoinLobbyByIdOptions
                 {
                     Player = GetPlayer(false),
                 });
@@ -288,11 +371,12 @@ public class LobbyManager : NetworkBehaviour
                 });
             }
 
-            NetworkPlayerData.SetMaxPlayer((EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value));
+            EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
+            NetworkPlayerData.SetMaxPlayer(gameMode);
             PublicLobbyDatas.Clear();
             mainLobbyUI.EnterMainLobbyUI(_joinedLobby.Name, _joinedLobby.LobbyCode);
-            InvokeRepeating(nameof(RefreshPlayers), _checkLobbyTime, _checkLobbyTime);
-            Debug.Log($"Joined lobby: {_joinedLobby.Name}.");
+            InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
+            Debug.Log($"참가한 로비: {_joinedLobby.Name}, 코드: {_joinedLobby.LobbyCode}, 내부 코드: {_joinedLobby.Data[_internalLobbyCodeDataKey].Value}.");
         }
         catch (LobbyServiceException ex)
         {
@@ -469,6 +553,12 @@ public class LobbyManager : NetworkBehaviour
         // 호스트로 게임 시작
         try
         {
+            // 연결된 네트워크가 있으면 종료
+            if (NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+
             _isGameStart = true;
             loadingUI.SetActive(true);
             string relayCode = await CreateRelay();
@@ -484,14 +574,29 @@ public class LobbyManager : NetworkBehaviour
 
             CancelInvoke(nameof(MaintainLobby));
             CancelInvoke(nameof(RefreshPlayers));
-            Invoke(nameof(LoadGameScene), _checkLobbyTime);
-            NetworkPlayerData.SetGameInfo(selectedMapType, selectedTankType);
+            Invoke(nameof(LoadGameScene), _rateLimitTime);
+            EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
+            string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
+            NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, true);
             _joinedLobby = null;
         }
         catch (LobbyServiceException ex)
         {
             Debug.LogError(ex.Message);
         }
+    }
+
+    void StartGameAsClient(string joinCode)
+    {
+        // 클라이언트로 게임 시작
+        _isGameStart = true;
+        loadingUI.SetActive(true);
+        JoinRelay(joinCode);
+        CancelInvoke(nameof(RefreshPlayers));
+        EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
+        string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
+        NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, false);
+        _joinedLobby = null;
     }
 
     public bool IsPlayer(int index)
@@ -626,17 +731,6 @@ public class LobbyManager : NetworkBehaviour
         }
     }
 
-    void StartGameAsClient(string joinCode)
-    {
-        // 클라이언트로 게임 시작
-        _isGameStart = true;
-        loadingUI.SetActive(true);
-        JoinRelay(joinCode);
-        CancelInvoke(nameof(RefreshPlayers));
-        NetworkPlayerData.SetGameInfo(selectedMapType, selectedTankType);
-        _joinedLobby = null;
-    }
-
     void LoadGameScene()
     {
         // 게임 씬 로드
@@ -663,20 +757,18 @@ public class LobbyManager : NetworkBehaviour
 
     public class LobbyData
     {
-        public string id;
-        public string name;
-        public EGameMode gameMode;
+        public string id; // 로비 고유 아이디
+        public string name; // 로비 제목
 
-        // 맵선택
+        public EGameMode gameMode;
         public eMapType selectedMap;
     }
 
     public class PlayerData
     {
-        public string name;
-        public bool ready;
+        public string name; // 닉네임
+        public bool ready; // 준비 상태
 
-        // 탱크 선택
         public eTankType selectedTank;
     }
 }

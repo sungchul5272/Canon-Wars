@@ -24,7 +24,6 @@ public class GameInitializer : NetworkBehaviour
 
     [Header("맵 스포너")]
     [SerializeField] private MapSpawner _mapSpawner;
-    [SerializeField] private eMapType _selectedMapType = eMapType.Random;
 
     [Header("인게임 UI")]
     [SerializeField] IngameUIController _ingameUI;
@@ -36,13 +35,6 @@ public class GameInitializer : NetworkBehaviour
     private Dictionary<ulong, UserData> _clientUserData = new();
 
     private bool _allReady = false;
-
-    //// 맵 생성 여부 확인
-    //private NetworkList<bool> _mapLoadComplete = new(new List<bool>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    //// 카메라 초기화 여부 확인
-    //private NetworkList<bool> _camerInitComplete = new(new List<bool>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    //private bool _bWaitAllComplete = false;
 
     void Awake()
     {
@@ -60,36 +52,10 @@ public class GameInitializer : NetworkBehaviour
             Debug.Log($"[GameInitializer] 맵 인덱스 변경: {prev} → {next}");
         };
 
-        //// 맵 로드 확인
-        //_mapLoadComplete.OnListChanged += (NetworkListEvent<bool> changeEvent) =>
-        //{
-        //    _bWaitAllComplete = true;
-        //    int playerCount = NetworkManager.Singleton.ConnectedClients.Count;
-
-        //    Debug.Log($"[GameInitializer] PlayerCount : {playerCount} mapLoadCompleteCount : {_mapLoadComplete.Count}");
-        //    if (playerCount != _mapLoadComplete.Count)
-        //    {
-        //        _bWaitAllComplete = false;
-        //    }
-        //};
-
-        //// 카메라 초기화 확인
-        //_camerInitComplete.OnListChanged += (NetworkListEvent<bool> changeEvent) =>
-        //{
-        //    _bWaitAllComplete = true;
-
-        //    int playerCount = NetworkManager.Singleton.ConnectedClients.Count;
-        //    Debug.Log($"[GameInitializer] PlayerCount : {playerCount} camerInitComplete : {_camerInitComplete.Count}");
-        //    if (playerCount != _camerInitComplete.Count)
-        //    {
-        //        _bWaitAllComplete = false;
-        //    }
-        //};
-
         if (IsClient)
         {
             string nick = FirebaseManager._instance.userVO.NickName;
-            string tankKey = NetworkPlayerData.selectedTank.ToString();
+            string tankKey = NetworkPlayerData.SelectedTank.ToString();
 
             SetMyInfoUI(nick, tankKey);
             ReportPlayerInfoServerRpc(nick, tankKey);
@@ -97,7 +63,6 @@ public class GameInitializer : NetworkBehaviour
             _loadingUI.SetActive(true);
         }
 
-        //NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         StartCoroutine(InitRoutine());
     }
 
@@ -110,19 +75,18 @@ public class GameInitializer : NetworkBehaviour
             yield return new WaitForSeconds(0.5f);
 
             // 생성할 맵 결정
-            if (NetworkPlayerData.selectedMapType == eMapType.Random)
+            if (NetworkPlayerData.SelectedMapType == eMapType.Random)
             {
                 _netMapIndex.Value = UnityEngine.Random.Range((int)eMapType.Valley, (int)eMapType.Max);
             }
             else
             {
-                _netMapIndex.Value = (int)NetworkPlayerData.selectedMapType;
+                _netMapIndex.Value = (int)NetworkPlayerData.SelectedMapType;
             }
 
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
             UpdateLoadingMapBackground(_netMapIndex.Value);
-            //_mapLoadComplete.Add(true);
             Debug.Log("[GameInitializer] 맵 생성 완료");
             var spawnList = _mapSpawner.GetSpawnPosPList();
             for (int i = 0; i < spawnList.Count; i++)
@@ -141,47 +105,11 @@ public class GameInitializer : NetworkBehaviour
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
             UpdateLoadingMapBackground(_netMapIndex.Value);
-
-            //// 맵 로드 완료
-            //ReportMapLoadedServerRpc();
         }
-
-        //// 모든 플레이어 맵 로드 대기
-        //while (!_bWaitAllComplete)
-        //{
-        //    yield return null;
-        //}
-
-        //Debug.Log("모든 유저 맵 로딩 완료");
-
-        //// 각자의 카메라 초기화
-        //_camController = Camera.main.GetComponent<CameraController>();
-        //_camController.Init(() =>
-        //{
-        //    if(IsServer)
-        //    {
-        //        Debug.Log("Server Camera Init Complete");
-        //        Debug.Log($"Camera Size : {Camera.main.orthographicSize}");
-        //        _camerInitComplete.Add(true);
-        //    }
-        //    else
-        //    {
-        //        Debug.Log("Client Camera Init Complete");
-        //        Debug.Log($"Camera Size : {Camera.main.orthographicSize}");
-        //        ReportCameraInitServerRpc();
-        //    }
-        //});
-
-        //// 모든 플레이어 카메라 초기화 대기
-        //while (!_bWaitAllComplete)
-        //{
-        //    yield return null;
-        //}
-        //Debug.Log("[GameInitializer] 카메라 초기화 완료");
 
         // 플레이어 생성
         ulong clientId = NetworkManager.Singleton.LocalClientId;
-        SpawnPlayerServerRpc(clientId, NetworkPlayerData.selectedTank);
+        SpawnPlayerServerRpc(clientId, NetworkPlayerData.SelectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
 
         if (IsServer)
@@ -196,25 +124,8 @@ public class GameInitializer : NetworkBehaviour
             IngameManager.Instance.StartGame();
             StartGameClientRpc();
         }
-
-        //if (IsServer)
-        //{
-        //    yield return new WaitForSeconds(5f);
-        //    CloseLoadingUIClientRpc();
-        //}
     }
 
-    //[ServerRpc(RequireOwnership = false)]
-    //public void ReportMapLoadedServerRpc()
-    //{
-    //    _mapLoadComplete.Add(true); // 요청
-    //}
-
-    //[ServerRpc(RequireOwnership = false)]
-    //public void ReportCameraInitServerRpc()
-    //{
-    //    _camerInitComplete.Add(true); // 요청
-    //}
     private void UpdateLoadingMapBackground(int mapIndex)
     {
         if (_mapBackgroundSprites == null || _mapBackgroundSprites.Count == 0)
@@ -232,10 +143,21 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
+    [ClientRpc]
+    private void SetPlayerNumberClientRpc(int value)
+    {
+        IngameManager instance = IngameManager.Instance;
+        if (instance.playerNumber < 0)
+        {
+            instance.playerNumber = value;
+        }
+    }
+
     [ServerRpc(RequireOwnership = false)]
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
-        Debug.Log($"플레이어 확인: {clientId}");
+        IngameManager instance = IngameManager.Instance;
+        instance.playerNumber++;
 
         int randIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
         Vector3 spawnPos = _spawnPosList[randIndex];
@@ -246,11 +168,13 @@ public class GameInitializer : NetworkBehaviour
         GameObject tankPrefab = GetTankPrefab(tankType);
         GameObject tank = Instantiate(tankPrefab, spawnPos, Quaternion.identity);
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        Debug.Log($"[GameInitializer] Player {clientId} 스폰 위치: {spawnPos}");
+        SetPlayerNumberClientRpc(instance.playerNumber);
+        Debug.Log($"[GameInitializer] ID: {clientId}, 플레이어 넘버: {instance.playerNumber}, 스폰 위치: {spawnPos}");
 
         // 모든 플레이어가 들어왔을 경우
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
         {
+            instance.playerNumber = 0;
             _allReady = true;
         }
     }

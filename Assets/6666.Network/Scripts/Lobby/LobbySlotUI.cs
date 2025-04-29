@@ -17,7 +17,7 @@ public class LobbySlotUI : MonoBehaviour
         joinButton.onClick.RemoveAllListeners();
         joinButton.onClick.AddListener(() =>
         {
-            instance.JoinLobby(null, transform.GetSiblingIndex());
+            instance.JoinLobby(string.Empty, transform.GetSiblingIndex(), string.Empty);
         });
     }
 
