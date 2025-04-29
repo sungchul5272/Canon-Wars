@@ -132,8 +132,6 @@ public class PlayerController : NetworkBehaviour
         {
             Flip(-1);
         }
-
-
     }
   
     // Update is called once per frame

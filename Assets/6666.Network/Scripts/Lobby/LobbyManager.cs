@@ -201,7 +201,7 @@ public class LobbyManager : MonoBehaviour
                         Debug.LogWarning("이전 로비가 남아있습니다.");
                     }
 
-                    await Task.Delay((int)(_rateLimitTime * 1000));  // 요청 대기
+                    await Task.Delay((int)(_rateLimitTime * 1000)); // 요청 대기
                 }
                 catch (LobbyServiceException ex)
                 {
@@ -216,15 +216,14 @@ public class LobbyManager : MonoBehaviour
 
     public async void CreateLobby(EGameMode gameMode, string lobbyName, bool isPrivate, string internalCode)
     {
-        // 내부 코드가 없으면 생성
-        if (internalCode == string.Empty)
+        if (internalCode == string.Empty) // 내부 코드가 없으면 새로 생성
         {
             while (true)
             {
                 string randomCode = GetRandomCode();
                 try
                 {
-                    // 중복된 코드를 가진 로비 표시
+                    // 중복된 코드를 가진 로비가 있는지 확인
                     QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync(new QueryLobbiesOptions
                     {
                         Filters = new List<QueryFilter>
@@ -245,11 +244,51 @@ public class LobbyManager : MonoBehaviour
                     {
                         Debug.Log("중복된 내부 코드 로비 발견, 코드 재생성 시작.");
                     }
+
+                    await Task.Delay((int)(_rateLimitTime * 1000)); // 요청 대기
                 }
                 catch (LobbyServiceException ex)
                 {
                     Debug.LogError(ex.Message);
                 }
+            }
+        }
+        else // 내부 코드를 이용해 복귀하는 경우
+        {
+            try
+            {
+                // 이전 로비가 남아있는지 확인
+                QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync(new QueryLobbiesOptions
+                {
+                    Filters = new List<QueryFilter>
+                    {
+                        // 동일한(EQ) 내부 코드만 표시
+                        new QueryFilter(QueryFilter.FieldOptions.S2, internalCode, QueryFilter.OpOptions.EQ)
+                    },
+                });
+
+                // 이전 로비가 남아있으면 삭제
+                if (queryResponse.Results.Count > 0)
+                {
+                    Debug.Log("이전 로비를 발견하여 삭제합니다.");
+                    for (int i = 0; i < queryResponse.Results.Count; i++)
+                    {
+                        try
+                        {
+                            // 로비 삭제
+                            await LobbyService.Instance.DeleteLobbyAsync(queryResponse.Results[i].Id);
+                            Debug.Log("이전 로비 삭제됨.");
+                        }
+                        catch (LobbyServiceException ex)
+                        {
+                            Debug.LogError(ex.Message);
+                        }
+                    }
+                }
+            }
+            catch (LobbyServiceException ex)
+            {
+                Debug.LogError(ex.Message);
             }
         }
 

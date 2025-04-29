@@ -11,7 +11,6 @@ public class IngameManager : NetworkBehaviour
 
     [Header("턴 설정")]
     [SerializeField] float _turnTime = 40f;
-    //[SerializeField] float _postAttackDelay = 10f;
     [SerializeField] Text _turnTimerText;
 
     [Header("Environment")]
@@ -64,54 +63,12 @@ public class IngameManager : NetworkBehaviour
         }
     }
 
-    //public void InitMapDone() { _isMapSpawned = true; InitAllDOne(); }
-    //public void InitTankDone() { _isTankSpawned = true; InitAllDOne(); }
-
-    //void InitAllDOne()
-    //{
-    //    if (_isMapSpawned && _isTankSpawned)
-    //    {
-    //        ReportClientReadyServerRpc();
-    //    }
-    //}
-
-    //[ServerRpc(RequireOwnership = false)]
-    //void ReportClientReadyServerRpc(ServerRpcParams rpcParams = default)
-    //{
-    //    ulong senderId = rpcParams.Receive.SenderClientId;
-    //    _clientReadyDict[senderId] = true;
-
-    //    if (AllClientsReady())
-    //    {
-    //        StartCoroutine(StartGameRoutine());
-    //    }
-    //}
-
-    //bool AllClientsReady()
-    //{
-    //    foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-    //    {
-    //        if (!_clientReadyDict.ContainsKey(clientId) || !_clientReadyDict[clientId]) return false;
-    //    }
-    //    return true;
-    //}
-
-
     public void StartGame()
     {
         GetRandomWindForce();
         _netTurnTimer.Value = _turnTime;
         _isGameStarted = true;
     }
-
-    //IEnumerator StartGameRoutine()
-    //{
-    //    yield return new WaitForSeconds(1f);
-
-    //    _netTurnTimer.Value = _turnTime;
-
-    //    _isGameStarted = true;
-    //}
 
     void Update()
     {
@@ -124,25 +81,9 @@ public class IngameManager : NetworkBehaviour
 
         if (_netTurnTimer.Value <= 0f)
         {
-            //ForceTurnEndClientRpc();
-            //CurShellTrans = null;
             PlayerTurnEndServerRpc();
         }
     }
-
-    //public void NotifyAttackCompleted()
-    //{
-    //    if (!IsMyTurn() || _isAttackResolving) return;
-    //    StartCoroutine(DelayedEndTurn());
-    //}
-
-    //IEnumerator DelayedEndTurn()
-    //{
-    //    _isAttackResolving = true;
-    //    yield return new WaitForSeconds(_postAttackDelay);
-    //    PlayerTurnEnd();
-    //    _isAttackResolving = false;
-    //}
 
     [ServerRpc(RequireOwnership = false)]
     public void PlayerTurnEndServerRpc()
@@ -166,6 +107,7 @@ public class IngameManager : NetworkBehaviour
             Debug.Log("게임 종료됨 턴이동 금지");
             yield break;
         }
+
         GetRandomWindForce();
 
         // 턴 이동
@@ -221,6 +163,7 @@ public class IngameManager : NetworkBehaviour
 
         var connectedClients = NetworkManager.Singleton.ConnectedClients;
         int counter = 0;
+        Debug.Log($"현재 접속된 클라이언트: {connectedClients.Count}.");
         foreach(var client in connectedClients)
         {
             NetworkObject playerObject = client.Value.PlayerObject;
@@ -232,6 +175,7 @@ public class IngameManager : NetworkBehaviour
             {
                 PlayerCameraFocusing(player);
                 bool isMyTurn = turnIndex == playerNumber;
+                Debug.Log($"현재 턴: {turnIndex}, 나의 턴: {playerNumber}.");
                 if (isMyTurn)
                 {
                     Debug.Log($"나의 턴.");
@@ -242,47 +186,6 @@ public class IngameManager : NetworkBehaviour
 
             counter++;
         }
-
-        //for (int i = 0; i < connectedClients.Count; i++)
-        //{
-        //    NetworkObject playerObject = connectedClients[(ulong)i].PlayerObject;
-        //    PlayerController player = playerObject.GetComponent<PlayerController>();
-
-        //    bool isTurn = turnIndex == i;
-        //    player.SetTurnMarkVisible(isTurn);
-        //    if (isTurn)
-        //    {
-        //        PlayerCameraFocusing(player);
-        //        bool isMyTurn = NetworkManager.Singleton.LocalClientId == (ulong)turnIndex;
-        //        if (isMyTurn)
-        //        {
-        //            Debug.Log($"나의 턴.");
-        //            player.SetMyTurn();
-        //            player.FillFuel();
-        //        }
-        //    }
-        //}
-
-        //foreach (PlayerController player in GameObject.FindGameObjectWithTag("Player"))
-        //{
-        //    bool isCurrentTurn = (int)player.OwnerClientId == turnIndex;
-        //    player.SetTurnMarkVisible(isCurrentTurn);
-
-        //    if (isCurrentTurn)
-        //    {
-        //        curTurnPlayer = player;
-
-        //        Debug.Log($"나의 턴.");
-        //        //NetworkObject playerObject = NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
-
-        //        curTurnPlayer.IsMyTurn();
-        //        curTurnPlayer.FillFuel();
-        //        RandomWindForce();
-        //    }
-        //}
-
-        //CurTurnPlayer = player;
-        //PlayerCameraFocusing(player);
     }
 
     public float GetWindForce() => _netWindForce.Value;
@@ -295,7 +198,7 @@ public class IngameManager : NetworkBehaviour
 
     public bool IsMyTurn()
     {
-        return _netTurnIndex.Value == (int)NetworkManager.Singleton.LocalClientId;
+        return _netTurnIndex.Value == playerNumber;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -308,7 +211,7 @@ public class IngameManager : NetworkBehaviour
             var playerObj = client.PlayerObject;
             if (playerObj != null)
             {
-                Debug.Log($"서버: 플레이어 {senderId} 사망, 오브젝트 제거");
+                Debug.Log($"서버: 플레이어 {senderId} 처치됨, 오브젝트 제거");
                 playerObj.Despawn(true);
             }
         }
@@ -318,7 +221,6 @@ public class IngameManager : NetworkBehaviour
     bool CheckGameEndCondition()
     {
         var alivePlayers = new List<NetworkObject>();
-
         foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
         {
             var obj = kvp.Value.PlayerObject;
