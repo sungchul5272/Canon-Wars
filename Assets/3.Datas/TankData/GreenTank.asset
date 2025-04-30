@@ -19,3 +19,6 @@ MonoBehaviour:
   _speed: 2
   _tankSprite: {fileID: 21300000, guid: d222fbffff4ccf3469a85a25ee21995f, type: 3}
   _tankPrefab: {fileID: 739751645702610340, guid: 68be450ddd43b334192ae9c0cc5a4b33, type: 3}
+  _shellList:
+  - {fileID: 8841971138863292209, guid: 96454ca9a2ed9d04aa56ff2c888749ac, type: 3}
+  - {fileID: 8841971138863292209, guid: c45fd2d17abbb59458ed5a2fe9c15812, type: 3}

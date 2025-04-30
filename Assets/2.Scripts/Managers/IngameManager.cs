@@ -90,6 +90,7 @@ public class IngameManager : NetworkBehaviour
     {
         Debug.Log("턴 종료.");
         _isTurnWait = true;
+        
         StartCoroutine(StartNextPlayerTurn());
     }
 
@@ -114,6 +115,7 @@ public class IngameManager : NetworkBehaviour
         _isTurnWait = false;
         MoveTurn();
     }
+
 
     private void MoveTurn()
     {
@@ -220,6 +222,10 @@ public class IngameManager : NetworkBehaviour
     }
     bool CheckGameEndCondition()
     {
+        // 최소한 게임이 시작됐다는것을 확인하고 나서 종료조건 확인
+        if (_isGameStarted == false)
+            return false;
+
         var alivePlayers = new List<NetworkObject>();
         foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
         {

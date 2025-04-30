@@ -34,6 +34,8 @@ public class GameInitializer : NetworkBehaviour
     private NetworkList<Vector3> _spawnPosList = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private Dictionary<ulong, UserData> _clientUserData = new();
 
+    private NetworkVariable<eTankType> _spawnTankType = new(eTankType.Max, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     private bool _allReady = false;
 
     void Awake()
@@ -165,11 +167,14 @@ public class GameInitializer : NetworkBehaviour
         Debug.Log($"남은 스폰 위치 수: {_spawnPosList.Count}.");
 
         // 탱크 데이터 불러와서 인스턴스
-        GameObject tankPrefab = GetTankPrefab(tankType);
-        GameObject tank = Instantiate(tankPrefab, spawnPos, Quaternion.identity);
+        TankDataSO tankData = GetSelectedTankData(tankType);
+        GameObject tank = Instantiate(tankData._tankPrefab, spawnPos, Quaternion.identity);
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
         SetPlayerNumberClientRpc(instance.playerNumber);
         Debug.Log($"[GameInitializer] ID: {clientId}, 플레이어 넘버: {instance.playerNumber}, 스폰 위치: {spawnPos}");
+
+        PlayerController tankController = tank.GetComponent<PlayerController>();
+        tankController._tankType.Value = tankData._tankType;
 
         // 모든 플레이어가 들어왔을 경우
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
@@ -187,7 +192,7 @@ public class GameInitializer : NetworkBehaviour
         Debug.Log("[GameInitializer] 초기화 완료! UI 전환");
     }
 
-    private GameObject GetTankPrefab(eTankType tankType)
+    private TankDataSO GetSelectedTankData(eTankType tankType)
     {
         eTankType typeToSpawn;
         if (tankType == eTankType.Random) // 탱크가 랜덤일 경우
@@ -202,7 +207,7 @@ public class GameInitializer : NetworkBehaviour
         }
 
         TankDataSO tankData = SODataManager.instance.GetTankData(typeToSpawn);
-        return tankData._tankPrefab;
+        return tankData;
     }
 
     public Vector2 GetMapSize()

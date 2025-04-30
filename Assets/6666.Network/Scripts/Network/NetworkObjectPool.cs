@@ -6,7 +6,7 @@ public class NetworkObjectPool : NetworkBehaviour
 {
     public static NetworkObjectPool Instance;
 
-    Queue<NetworkObject> _netObjPools = new();
+    private Dictionary<string, Queue<NetworkObject>> _netObjPools = new();
 
     void Awake()
     {
@@ -20,14 +20,22 @@ public class NetworkObjectPool : NetworkBehaviour
             return null;
         }
 
+        string key = prefab.name;
+
+        if (!_netObjPools.ContainsKey(key))
+            _netObjPools[key] = new Queue<NetworkObject>();
+
         NetworkObject netObj;
-        if (_netObjPools.Count > 0)
+        var pool = _netObjPools[key];
+
+        if (pool.Count > 0)
         {
-            netObj = _netObjPools.Dequeue();
+            netObj = pool.Dequeue();
         }
         else
         {
             netObj = Instantiate(prefab);
+            netObj.name = key;
         }
 
         if (!netObj.IsSpawned)
@@ -75,11 +83,16 @@ public class NetworkObjectPool : NetworkBehaviour
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var netObj))
         {
             netObj.gameObject.SetActive(false);
-            Debug.Log($"Prefab: {netObj.gameObject} set to {netObj.gameObject.activeSelf}");
+            //Debug.Log($"Prefab: {netObj.gameObject} set to {netObj.gameObject.activeSelf}");
 
             if (IsServer)
             {
-                _netObjPools.Enqueue(netObj);
+                string key = netObj.name;
+
+                if (!_netObjPools.ContainsKey(key))
+                    _netObjPools[key] = new Queue<NetworkObject>();
+
+                _netObjPools[key].Enqueue(netObj);
             }
         }
     }

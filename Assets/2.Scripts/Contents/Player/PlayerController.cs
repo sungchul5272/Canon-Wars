@@ -15,7 +15,7 @@ public class PlayerController : NetworkBehaviour
     private const float DEAD_HEIGHT = -20f;  //  죽는 높이
     private const float GRAVITY_SCALE_GROUND = 10f;
     private const float GRAVITY_SCALE_AERIAL = 1f;
-
+    
     [Header("Body")]
     [SerializeField] private float _moveAngleThreshold = 70f;
     [SerializeField] private float _speed = 4f;
@@ -71,6 +71,7 @@ public class PlayerController : NetworkBehaviour
     public NetworkVariable<FixedString32Bytes> _NickName =
         new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    public NetworkVariable<eTankType> _tankType = new(eTankType.Max, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private void Awake()
     {
@@ -85,6 +86,14 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        _tankType.OnValueChanged += (oldVal, newVal) =>
+        {
+            if(newVal != eTankType.Random || newVal != eTankType.Max)
+            {
+                SetTankTypeAndShellList(newVal);
+            }
+        };
+
         Init();
 
         _hp.OnValueChanged += (oldVal, newVal) =>
@@ -110,9 +119,6 @@ public class PlayerController : NetworkBehaviour
 
     public void Init()
     {
-        // Default
-        _curShell = _shellList[0];
-
         // 예측 점 생성
         _predictionPoints = new GameObject[_predictionPointNum];
 
@@ -152,13 +158,7 @@ public class PlayerController : NetworkBehaviour
         // 땅에 있는지 확인 및 중력값 실시간 조정
         _isGround = GroundCheckAndGravityUpdate();
 
-        // 내 턴이고 포탄을 쏠 수 있을 때에만 움직임
-        if (!IngameManager.Instance.IsMyTurn() || !_isCanFire)
-        {
-            return;
-        }
-
-        // 포탄 변경
+        // 포탄 변경 ( 내 턴이 아니여도 포탄 선택 가능)
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             if (_shellList[0] == null)
@@ -182,6 +182,12 @@ public class PlayerController : NetworkBehaviour
                 // 2번 폭탄
                 _curShell = _shellList[1];
             }
+        }
+
+        // 내 턴이고 포탄을 쏠 수 있을 때에만 움직임
+        if (!IngameManager.Instance.IsMyTurn() || !_isCanFire)
+        {
+            return;
         }
 
         // 파워게이지 증가 시키기
@@ -293,6 +299,7 @@ public class PlayerController : NetworkBehaviour
 
         // 포탄 초기화
         Shell shell = _curSpawnedShell.GetComponent<Shell>();
+
         switch (shell.ShellExplosionType)
         {
             case eShellExplosionType.Circle:
@@ -300,8 +307,10 @@ public class PlayerController : NetworkBehaviour
                 break;
 
             case eShellExplosionType.Ellipse:
-                ShellEllipse shellEllipse = shell.GetComponent<ShellEllipse>();
-                shellEllipse.Init();
+                ShellEllipse ellipseShell = shell.GetComponent<ShellEllipse>();
+                ellipseShell.Init();
+
+                shell = ellipseShell;
                 break;
         }
 
@@ -584,5 +593,15 @@ public class PlayerController : NetworkBehaviour
     {
         if (_turnMark != null)
             _turnMark.SetActive(visible);
+    }
+
+    public void SetTankTypeAndShellList(eTankType type)
+    {
+        // 포탄 리스트 불러오기
+        _shellList.Clear();
+        _shellList = SODataManager.instance.GetTankData(type)._shellList;
+
+        // Default
+        _curShell = _shellList[0];
     }
 }

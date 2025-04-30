@@ -344,6 +344,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  _tankType: 2
   _moveAngleThreshold: 70
   _speed: 2
   _curFuel: 0
@@ -352,9 +353,7 @@ MonoBehaviour:
   _artilleryRotateSpeed: 400
   _minAngleArtillery: 0
   _maxAngleArtillery: 85
-  _shellList:
-  - {fileID: 8841971138863292209, guid: 96454ca9a2ed9d04aa56ff2c888749ac, type: 3}
-  - {fileID: 8841971138863292209, guid: c45fd2d17abbb59458ed5a2fe9c15812, type: 3}
+  _shellList: []
   _maxShellPower: 20
   _minShellPower: 0.1
   _curShellPower: 1
@@ -369,6 +368,41 @@ MonoBehaviour:
   _playerHpBar: {fileID: 598189110410776065}
   _hp:
     m_InternalValue: 100
+  _NickName:
+    m_InternalValue:
+      utf8LengthInBytes: 0
+      bytes:
+        offset0000:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        byte0016: 0
+        byte0017: 0
+        byte0018: 0
+        byte0019: 0
+        byte0020: 0
+        byte0021: 0
+        byte0022: 0
+        byte0023: 0
+        byte0024: 0
+        byte0025: 0
+        byte0026: 0
+        byte0027: 0
+        byte0028: 0
+        byte0029: 0
 --- !u!1 &1856401261984590612
 GameObject:
   m_ObjectHideFlags: 0

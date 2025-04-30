@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
 public class ShellEllipse : Shell
 {
@@ -21,45 +22,62 @@ public class ShellEllipse : Shell
         // 충돌 확인 시 
         if (hit.collider != null)
         {
-            // 파티클 재생
-            CreateExplosionParticle();
+            CheckExplosionClientRpc(colliderCenter);
+        }
+    }
 
-            // 카메라 흔들림
-            CamShake();
+    [ClientRpc]
+    public override void CheckExplosionClientRpc(Vector2 colliderCenter)
+    {
+        // 파티클 재생
+        CreateExplosionParticle();
 
-            // 현재 원 모양 상태로 폭발범위 닿는곳을 가져옴
-            float radiusY = _radius / _radiusYRatio;
-            Collider2D[] hitAllPlayerList = Physics2D.OverlapCircleAll(colliderCenter, Mathf.Max(_radius, radiusY), LayerMask.GetMask("Player"));
+        // 카메라 흔들림
+        CamShake();
 
-            List<Collider2D> filteredPlayerList = new List<Collider2D>(hitAllPlayerList);
+        // 현재 원 모양 상태로 폭발범위 닿는곳을 가져옴
+        float radiusY = _radius / _radiusYRatio;
+        Collider2D[] hitAllPlayerList = Physics2D.OverlapCircleAll(colliderCenter, Mathf.Max(_radius, radiusY), LayerMask.GetMask("Player"));
 
-            // 타원 밖에 있는 객체 제거
-            filteredPlayerList.RemoveAll(hitObject =>
+        List<Collider2D> filteredPlayerList = new List<Collider2D>(hitAllPlayerList);
+
+        // 타원 밖에 있는 객체 제거
+        filteredPlayerList.RemoveAll(hitObject =>
+        {
+            Vector2 pos = hitObject.transform.position;
+            float dx = (pos.x - colliderCenter.x) / _radius;
+            float dy = (pos.y - colliderCenter.y) / radiusY;
+
+            return (dx * dx) + (dy * dy) > 1;  // 타원 방정식 검사에 실패한 경우 제거
+        });
+
+        Collider2D[] hitGroundList = Physics2D.OverlapCircleAll(colliderCenter, _radius, LayerMask.GetMask("Ground"));
+
+        if (filteredPlayerList.Count > 0)
+        {
+            // 데미지 주기
+        }
+
+        if (hitGroundList.Length > 0)
+        {
+            foreach (var hitGround in hitGroundList)
             {
-                Vector2 pos = hitObject.transform.position;
-                float dx = (pos.x - colliderCenter.x) / _radius;
-                float dy = (pos.y - colliderCenter.y) / radiusY;
-
-                return (dx * dx) + (dy * dy) > 1;  // 타원 방정식 검사에 실패한 경우 제거
-            });
-
-            Collider2D[] hitGroundList = Physics2D.OverlapCircleAll(colliderCenter, _radius, LayerMask.GetMask("Ground"));
-
-            if (filteredPlayerList.Count > 0)
-            {
-                // 데미지 주기
+                Ground ground = hitGround.GetComponent<Ground>();
+                ground.GroundExplosion(colliderCenter, _radius, radiusY, eShellExplosionType.Ellipse);
             }
+        }
 
-            if (hitGroundList.Length > 0)
-            {
-                foreach (var hitGround in hitGroundList)
-                {
-                    Ground ground = hitGround.GetComponent<Ground>();
-                    ground.GroundExplosion(colliderCenter, _radius, radiusY, eShellExplosionType.Ellipse);
-                }
-            }
+        ReleaseShell();
+    }
 
-            ReleaseShell();
+    private void OnEnable()
+    {
+        // 풀에서 꺼낸 직후에 TrailRenderer 초기화
+        var trail = GetComponent<TrailRenderer>();
+        if (trail != null)
+        {
+            trail.Clear();
         }
     }
 }
+

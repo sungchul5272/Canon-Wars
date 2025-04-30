@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public enum eTankType
@@ -24,4 +25,6 @@ public class TankDataSO : ScriptableObject
     [Header("攀农 橇府普")]
     public GameObject _tankPrefab; // 攀农 橇府普
 
+    [Header("攀农 家蜡 器藕 橇府普")]
+    public List<GameObject> _shellList = new List<GameObject>();
 }

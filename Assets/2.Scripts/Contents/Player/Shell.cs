@@ -148,7 +148,7 @@ public class Shell : NetworkBehaviour
     }
  
     [ClientRpc]
-    private void CheckExplosionClientRpc(Vector2 colliderCenter)
+    public virtual void CheckExplosionClientRpc(Vector2 colliderCenter)
     {
         // 파티클 생성
         CreateExplosionParticle();
