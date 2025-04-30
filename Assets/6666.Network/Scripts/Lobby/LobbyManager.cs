@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,7 +51,8 @@ public class LobbyManager : MonoBehaviour
     public eTankType selectedTankType = eTankType.Random;
 
     Lobby _joinedLobby;
-    System.Random random = new System.Random();
+    Coroutine _autoNetworkShutdown;
+    System.Random _random = new();
 
     readonly string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 대문자 알파벳과 숫자
 
@@ -176,11 +178,10 @@ public class LobbyManager : MonoBehaviour
             // 호스트는 로비 생성
             CreateLobby(NetworkPlayerData.GameMode, NetworkPlayerData.LobbyName, NetworkPlayerData.IsPrivateLobby, NetworkPlayerData.InternalLobbyCode);
 
-            // TODO : 만약 게임이 정상 종료되었는데도 클라이언트가 방을 못찾고 시작 메뉴로 갈 경우 수정해야 함
-            // 연결된 네트워크가 있으면 종료
-            if (NetworkManager.Singleton.IsListening)
+            // 일정 시간 후 자동으로 네트워크 종료
+            if (_autoNetworkShutdown == null)
             {
-                NetworkManager.Singleton.Shutdown();
+                _autoNetworkShutdown = StartCoroutine(AutoNetworkShutdown());
             }
         }
         else
@@ -222,6 +223,17 @@ public class LobbyManager : MonoBehaviour
 
             Debug.Log("복귀할 로비 참가.");
             JoinLobby(string.Empty, -1, lobbyId);
+        }
+    }
+
+    IEnumerator AutoNetworkShutdown()
+    {
+        yield return new WaitForSeconds(5);
+
+        if (NetworkManager.Singleton.IsListening)
+        {
+            Debug.Log("자동 네트워크 종료.");
+            NetworkManager.Singleton.Shutdown();
         }
     }
 
@@ -345,7 +357,7 @@ public class LobbyManager : MonoBehaviour
         StringBuilder stringBuilder = new(length);
         for (int i = 0; i < length; i++)
         {
-            stringBuilder.Append(chars[random.Next(chars.Length)]);
+            stringBuilder.Append(chars[_random.Next(chars.Length)]);
         }
 
         return stringBuilder.ToString();
@@ -598,16 +610,28 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    public void ManualNetworkShutdown()
+    {
+        // 자동 종료 취소
+        if (_autoNetworkShutdown != null)
+        {
+            StopCoroutine(_autoNetworkShutdown);
+            _autoNetworkShutdown = null;
+        }
+
+        // 연결된 네트워크가 있으면 종료
+        if (NetworkManager.Singleton.IsListening)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
+    }
+
     public async void StartGameAsHost()
     {
         // 호스트로 게임 시작
         try
         {
-            // 연결된 네트워크가 있으면 종료
-            if (NetworkManager.Singleton.IsListening)
-            {
-                NetworkManager.Singleton.Shutdown();
-            }
+            ManualNetworkShutdown();
 
             _isGameStart = true;
             loadingUI.SetActive(true);
