@@ -36,7 +36,7 @@ public class GameInitializer : NetworkBehaviour
     private Dictionary<ulong, UserData> _clientUserData = new();
     private List<bool> _allDones = new();
 
-    private float _gameLoadingTimeout = 20;
+    private float _gameLoadingTimeout = 10;
 
     void Awake()
     {
@@ -110,7 +110,8 @@ public class GameInitializer : NetworkBehaviour
         }
 
         // 플레이어 생성
-        ulong clientId = NetworkManager.Singleton.LocalClientId;
+        NetworkManager singleton = NetworkManager.Singleton;
+        ulong clientId = singleton.LocalClientId;
         SpawnPlayerServerRpc(clientId, NetworkPlayerData.SelectedTank);
         Debug.Log("[GameInitializer] 탱크 생성 완료");
 
@@ -124,6 +125,24 @@ public class GameInitializer : NetworkBehaviour
 
             IngameManager.Instance.SetStartTurnIndex();
             IngameManager.Instance.StartGame();
+        }
+        else
+        {
+            while (singleton.IsListening)
+            {
+                yield return null;
+
+                if (IngameManager.Instance.playerTurnNumber >= 0)
+                {
+                    break;
+                }
+            }
+
+            if (!singleton.IsListening)
+            {
+                Debug.LogWarning("네트워크 연결이 해제되어 로비로 돌아갑니다.");
+                IngameManager.Instance.BackToLobby();
+            }
         }
     }
 
