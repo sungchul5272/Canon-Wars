@@ -8,6 +8,18 @@ public class ShellEllipse : Shell
     [Header("Radius Y = Radius / RadiusY Ratio")]
     [SerializeField] private float _radiusYRatio = 2f;
 
+    [Header("Trail")]
+    [SerializeField] private TrailRenderer _trailRenderer = null;
+
+    public override void Init()
+    {
+        base.Init();
+
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.Clear();
+        }
+    }
     public override void CheckExplosion()
     {
         Debug.DrawRay(transform.position, Vector2.down * 0.5f, Color.magenta);

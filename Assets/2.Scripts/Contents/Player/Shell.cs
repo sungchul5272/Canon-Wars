@@ -50,7 +50,7 @@ public class Shell : NetworkBehaviour
         };
     }
 
-    public void Init()
+    virtual public void Init()
     {
         _isFire = false;
         _endTime = Time.time + _durtaion;

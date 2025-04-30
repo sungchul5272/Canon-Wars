@@ -88,11 +88,22 @@ public class PlayerController : NetworkBehaviour
     {
         _tankType.OnValueChanged += (oldVal, newVal) =>
         {
-            if(newVal != eTankType.Random || newVal != eTankType.Max)
+            Debug.Log($"[PlayerController] tankType {oldVal} -> {newVal}");
+            if(newVal != eTankType.Random && newVal != eTankType.Max)
             {
                 SetTankTypeAndShellList(newVal);
             }
         };
+
+        // 서버의 탱크가 클라이언트 입장에서 초기화 안되는 현상 보완
+        if (IsClient && !IsOwner) 
+        {
+            if (_tankType.Value != eTankType.Random && _tankType.Value != eTankType.Max)
+            {
+                SetTankTypeAndShellList(_tankType.Value);
+                Debug.Log($"[Client Init] 서버 탱크 초기화: {_tankType.Value}");
+            }
+        }
 
         Init();
 

@@ -413,3 +413,4 @@ MonoBehaviour:
   _durtaion: 7
   _radius: 2.5
   _radiusYRatio: 1.5
+  _trailRenderer: {fileID: 9145094562357057559}
