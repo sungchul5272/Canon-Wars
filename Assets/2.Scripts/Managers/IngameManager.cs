@@ -189,7 +189,7 @@ public class IngameManager : NetworkBehaviour
     }
 
     public float GetWindForce() => _netWindForce.Value;
-    public bool IsCurPlayerTurnWait() => _isTurnWait;
+    //public bool IsCurPlayerTurnWait() => _isTurnWait;
 
     public void PlayerCameraFocusing(PlayerController playerController)
     {

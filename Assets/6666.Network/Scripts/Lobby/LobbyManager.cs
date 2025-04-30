@@ -135,8 +135,18 @@ public class LobbyManager : MonoBehaviour
             // 이미 로그인 된 경우 경기가 끝나고 돌아온 것으로 간주
             if (AuthenticationService.Instance.IsSignedIn)
             {
-                Debug.Log("이미 로그인하였으므로 로비로 이동합니다.");
-                SetSceneToMainLobby();
+                if (NetworkManager.Singleton.IsListening)
+                {
+                    Debug.Log("로비로 복귀합니다.");
+                    SetSceneToMainLobby();
+                }
+                else
+                {
+                    // 연결이 끊긴 경우
+                    Debug.Log("연결이 끊겼으므로 시작 메뉴로 이동합니다.");
+                    startPanel.SetActive(true);
+                }
+
                 return;
             }
 
@@ -166,6 +176,7 @@ public class LobbyManager : MonoBehaviour
             // 호스트는 로비 생성
             CreateLobby(NetworkPlayerData.GameMode, NetworkPlayerData.LobbyName, NetworkPlayerData.IsPrivateLobby, NetworkPlayerData.InternalLobbyCode);
 
+            // TODO : 만약 게임이 정상 종료되었는데도 클라이언트가 방을 못찾고 시작 메뉴로 갈 경우 수정해야 함
             // 연결된 네트워크가 있으면 종료
             if (NetworkManager.Singleton.IsListening)
             {
@@ -174,7 +185,7 @@ public class LobbyManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("복귀할 로비 검색.");
+            Debug.Log("복귀할 로비 탐색.");
             string lobbyId;
             while (true)
             {

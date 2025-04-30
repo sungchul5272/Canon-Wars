@@ -52,8 +52,6 @@ public class Shell : NetworkBehaviour
 
     public void Init()
     {
-        //_collider2D = GetComponent<BoxCollider2D>();
-        //_rb2D = GetComponent<Rigidbody2D>();
         _isFire = false;
         _endTime = Time.time + _durtaion;
     }
@@ -91,9 +89,7 @@ public class Shell : NetworkBehaviour
         // 지속시간이 끝나면 없애기
         if (Time.time >= _endTime)
         {
-            // TODO : 풀링
             NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
-            //PoolManager.Instance.Push(gameObject);
         }
     }
     protected void LateUpdate()
@@ -195,8 +191,6 @@ public class Shell : NetworkBehaviour
         ReleaseShell();
     }
 
-
-
     protected void ReleaseShell()
     {
         // 카메라가 더이상 포탄을 안따라가도록
@@ -208,11 +202,6 @@ public class Shell : NetworkBehaviour
 
         // 충돌한 경우에만 Pool
         NetworkObjectPool.Instance.RemoveNetObj(_networkObject);
-        //if (IsServer)
-        //{
-        //    // TODO : 풀링
-        //    //PoolManager.Instance.Push(gameObject);
-        //}
     }
 
     protected void CreateExplosionParticle()
@@ -243,6 +232,7 @@ public class Shell : NetworkBehaviour
 
         camShake.Shake(_shakeDurtaion, _shakeMagnitude);
     }
+
     //private void DebugExplosionCircle(Vector2 position, float radius)
     //{
     //    GameObject debugCircle = new GameObject("ExplosionDebugCircle");
