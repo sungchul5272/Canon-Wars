@@ -27,6 +27,7 @@ public class IngameManager : NetworkBehaviour
     NetworkVariable<float> _netWindForce = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<float> _netTurnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    NetworkVariable<int> _netSelectedShellIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     string _lobbySceneName = "2.LobbyScene";
     bool _isGameStarted = false;
@@ -343,6 +344,31 @@ public class IngameManager : NetworkBehaviour
     public float GetTurnTime()
     {
         return Mathf.Max(0, _netTurnTimer.Value);
+    }
+
+    // 클라이언트가 선택한 포탄 인덱스를 서버에 전송하는 메소드
+    public void SetSelectedShellIndex(int index)
+    {
+        if (IsServer)
+        {
+            _netSelectedShellIndex.Value = index; // 서버에서 직접 수정
+        }
+        else
+        {
+            // 클라이언트는 ServerRpc를 통해 서버에 값을 전송
+            SetSelectedShellIndexServerRpc(index);
+        }
+    }
+
+    // 서버에서 클라이언트의 요청을 받아 포탄 인덱스를 설정
+    [ServerRpc(RequireOwnership = false)]
+    private void SetSelectedShellIndexServerRpc(int index)
+    {
+        _netSelectedShellIndex.Value = index;
+    }
+    public int GetSelectShellIndex()
+    {
+        return _netSelectedShellIndex.Value;
     }
 }
 

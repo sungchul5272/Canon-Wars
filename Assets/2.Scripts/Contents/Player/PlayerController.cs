@@ -51,15 +51,17 @@ public class PlayerController : NetworkBehaviour
 
     private Rigidbody2D _rb2D = null;               // Tank RigidBody 2D
     private CircleCollider2D _colider2D = null;     // Tank CircleCollider 2D
-    private GameObject _curShell = null;            // 현재 선택된 포탄    
+   // private GameObject _curShell = null;            // 현재 선택된 포탄    
     private GameObject[] _predictionPoints;        // 예측 지점 오브젝트 배열
 
     private float _dirY = 0;
     private float _dirX = 0;
-    private bool _isMoveAngle = false;
     private float _curGauge = 0f;
     private float _prevShellPower = 0f;           // 이전에 쏜 파워 값
 
+    private int _curShellIndex = 0; 
+
+    private bool _isMoveAngle = false;
     private bool _isGround = false;
     private bool _isDead = false;                   // 죽음 확인    
     private bool _isFire = false;
@@ -179,7 +181,9 @@ public class PlayerController : NetworkBehaviour
             else
             {
                 // 1번 폭탄
-                _curShell = _shellList[0];
+                //_curShell = _shellList[0];
+                _curShellIndex = 0;
+                Debug.Log($"Selected Shell = {_shellList[_curShellIndex].name}");
             }
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
@@ -191,7 +195,10 @@ public class PlayerController : NetworkBehaviour
             else
             {
                 // 2번 폭탄
-                _curShell = _shellList[1];
+                //_curShell = _shellList[1];  
+                _curShellIndex = 1;
+
+                Debug.Log($"Selected Shell = {_shellList[_curShellIndex].name}");
             }
         }
 
@@ -217,6 +224,9 @@ public class PlayerController : NetworkBehaviour
             _isFire = true;
             _curGauge = 0f;
             _isCanFire = false;
+
+            // 포탄 선택 확정
+            IngameManager.Instance.SetSelectedShellIndex(_curShellIndex);
 
             // 포탄 생성
             GenerationShellServerRpc(_curShellPower);
@@ -296,8 +306,11 @@ public class PlayerController : NetworkBehaviour
         Debug.Log($"서버 포탄 파워: {shellPower}.");
 
         // 포탄 풀링
-        _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
+        //_curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
 
+        int selectedShellIndex = IngameManager.Instance.GetSelectShellIndex();
+        Debug.Log($"선택된 포탄 인덱스 : {selectedShellIndex}.");
+        _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_shellList[selectedShellIndex].GetComponent<NetworkObject>());
         // 포탄 위치와 회전
         GameObject shellGameObj = _curSpawnedShell.gameObject;
         shellGameObj.transform.position = _shellFireTrans.position;
@@ -341,10 +354,10 @@ public class PlayerController : NetworkBehaviour
             IngameManager.Instance.CurShellTrans = netObj.transform;
 
             // 내 턴이면 발사한 포탄 저장
-            if (IngameManager.Instance.IsMyTurn())
-            {
-                _curShell = netObj.gameObject;
-            }
+            //if (IngameManager.Instance.IsMyTurn())
+            //{
+            //    _curShell = netObj.gameObject;
+            //}
         }
     }
 
@@ -547,8 +560,8 @@ public class PlayerController : NetworkBehaviour
         }
 
         // Rigidbody2D의 질량 가져오기 (필수)
-        float mass = _curShell.GetComponent<Rigidbody2D>().mass;
-
+        //float mass = _curShell.GetComponent<Rigidbody2D>().mass;
+        float mass = _shellList[_curShellIndex].GetComponent<Rigidbody2D>().mass;
         // AddForce에서 적용한 힘
         Vector2 force = new Vector2(Mathf.Cos(fireAngle), Mathf.Sin(fireAngle) * Mathf.Sign(transform.localScale.x)) * _curShellPower;
 
@@ -566,8 +579,6 @@ public class PlayerController : NetworkBehaviour
         _srWheel.sortingOrder += value;
         _srAritllery.sortingOrder += value;
     }
-
-
 
     public void ApplyLocalDamage(int dmg)
     {
@@ -613,6 +624,7 @@ public class PlayerController : NetworkBehaviour
         _shellList = SODataManager.instance.GetTankData(type)._shellList;
 
         // Default
-        _curShell = _shellList[0];
+        //_curShell = _shellList[0];
+        _curShellIndex = 0;
     }
 }

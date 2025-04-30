@@ -16,5 +16,5 @@ MonoBehaviour:
   foregroundPrefab: {fileID: 849625363689414859, guid: b8291bbc91fe7d74799fc613a7a18858, type: 3}
   mapType: 1
   mapSize: {x: 53.75, y: 34}
-  _mapSprite: {fileID: 21300000, guid: 8cfc00cf733e12245a302b78723b5b30, type: 3}
+  mapSprite: {fileID: 21300000, guid: 8cfc00cf733e12245a302b78723b5b30, type: 3}
   sound: {fileID: 8300000, guid: 2acea60979cb11a49bb725fd35edff45, type: 3}
