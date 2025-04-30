@@ -171,18 +171,13 @@ public class LobbyManager : MonoBehaviour
         startPanel.SetActive(true);
         startLobbyUI.gameObject.SetActive(false);
         mainLobbyUI.gameObject.SetActive(true);
+        loadingUI.SetActive(true);
         if (NetworkPlayerData.IsHost)
         {
             Debug.Log("복귀할 로비 재생성.");
 
             // 호스트는 로비 생성
             CreateLobby(NetworkPlayerData.GameMode, NetworkPlayerData.LobbyName, NetworkPlayerData.IsPrivateLobby, NetworkPlayerData.InternalLobbyCode);
-
-            // 일정 시간 후 자동으로 네트워크 종료
-            if (_autoNetworkShutdown == null)
-            {
-                _autoNetworkShutdown = StartCoroutine(AutoNetworkShutdown());
-            }
         }
         else
         {
@@ -223,17 +218,6 @@ public class LobbyManager : MonoBehaviour
 
             Debug.Log("복귀할 로비 참가.");
             JoinLobby(string.Empty, -1, lobbyId);
-        }
-    }
-
-    IEnumerator AutoNetworkShutdown()
-    {
-        yield return new WaitForSeconds(5);
-
-        if (NetworkManager.Singleton.IsListening)
-        {
-            Debug.Log("자동 네트워크 종료.");
-            NetworkManager.Singleton.Shutdown();
         }
     }
 
@@ -344,10 +328,36 @@ public class LobbyManager : MonoBehaviour
             InvokeRepeating(nameof(MaintainLobby), _maintainLobbyTime, _maintainLobbyTime);
             InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
             Debug.Log($"생성된 로비: {lobbyName}, 코드: {_joinedLobby.LobbyCode}, 내부 코드: {_joinedLobby.Data[_internalLobbyCodeDataKey].Value}.");
+
+            // 자동으로 기존 네트워크 연결 종료
+            if (_autoNetworkShutdown == null)
+            {
+                _autoNetworkShutdown = StartCoroutine(AutoNetworkShutdown());
+            }
         }
         catch (LobbyServiceException ex)
         {
             Debug.LogError(ex.Message);
+        }
+    }
+
+    IEnumerator AutoNetworkShutdown()
+    {
+        NetworkManager singletone = NetworkManager.Singleton;
+        while (singletone.IsListening)
+        {
+            if (_joinedLobby.Players.Count >= singletone.ConnectedClients.Count)
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        if (singletone.IsListening)
+        {
+            Debug.Log("자동 네트워크 종료.");
+            singletone.Shutdown();
         }
     }
 
@@ -610,19 +620,35 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public void ManualNetworkShutdown()
+    private async Task ManualNetworkShutdown()
     {
-        // 자동 종료 취소
-        if (_autoNetworkShutdown != null)
+        try
         {
-            StopCoroutine(_autoNetworkShutdown);
-            _autoNetworkShutdown = null;
-        }
+            NetworkManager singleton = NetworkManager.Singleton;
 
-        // 연결된 네트워크가 있으면 종료
-        if (NetworkManager.Singleton.IsListening)
+            // 자동 네트워크 종료 취소
+            if (_autoNetworkShutdown != null)
+            {
+                StopCoroutine(_autoNetworkShutdown);
+                _autoNetworkShutdown = null;
+            }
+
+            // 연결된 네트워크가 있거나 아직 종료 중이면
+            if (singleton.IsListening || singleton.ShutdownInProgress)
+            {
+                // 종료 반복 호출 가능
+                singleton.Shutdown();
+
+                // 종료될 때까지 대기
+                while (singleton.ShutdownInProgress || singleton.IsListening)
+                {
+                    await Task.Yield(); // 다음 프레임까지 대기
+                }
+            }
+        }
+        catch (System.Exception ex)
         {
-            NetworkManager.Singleton.Shutdown();
+            Debug.LogError($"Network error: {ex.Message}");
         }
     }
 
@@ -631,7 +657,7 @@ public class LobbyManager : MonoBehaviour
         // 호스트로 게임 시작
         try
         {
-            ManualNetworkShutdown();
+            await ManualNetworkShutdown();
 
             _isGameStart = true;
             loadingUI.SetActive(true);

@@ -179,7 +179,6 @@ public class GameInitializer : NetworkBehaviour
         // 모든 플레이어가 들어왔을 경우
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
         {
-            //instance.playerNumber = 0;
             _allReady = true;
         }
     }
