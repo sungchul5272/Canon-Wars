@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 public class IngameManager : NetworkBehaviour
 {
@@ -19,7 +20,7 @@ public class IngameManager : NetworkBehaviour
 
     public Transform CurShellTrans { get; set; }
 
-    public int playerNumber = -1;
+    public int playerTurnNumber = -1;
 
     private const float TURN_END_TERM = 3f;
 
@@ -27,6 +28,7 @@ public class IngameManager : NetworkBehaviour
     NetworkVariable<float> _netTurnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<int> _netTurnIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    string _lobbySceneName = "2.LobbyScene";
     bool _isGameStarted = false;
     bool _isTurnWait = false;
     bool _alreadySavedBattleInfo = false;
@@ -68,6 +70,40 @@ public class IngameManager : NetworkBehaviour
         GetRandomWindForce();
         _netTurnTimer.Value = _turnTime;
         _isGameStarted = true;
+    }
+
+    public void LeaveGame()
+    {
+        Debug.Log("Leave game and back to lobby.");
+
+        // 연결 해제
+        NetworkManager.Singleton.Shutdown();
+
+        // 본인만 로비 씬 로드
+        SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
+    }
+
+    public void BackToLobby()
+    {
+        Debug.Log("End game and back to lobby.");
+
+        if (NetworkManager.Singleton.IsListening)
+        {
+            // 지금은 호스트만 가능
+            if (!NetworkManager.Singleton.IsServer)
+            {
+                Debug.LogWarning("Only host can end game.");
+                return;
+            }
+
+            // 로비 씬 로드
+            NetworkManager.Singleton.SceneManager.LoadScene(_lobbySceneName, LoadSceneMode.Single);
+        }
+        else
+        {
+            // 연결이 끊긴 경우 본인만 로비 씬 로드
+            SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
+        }
     }
 
     void Update()
@@ -176,8 +212,8 @@ public class IngameManager : NetworkBehaviour
             if (isTurn)
             {
                 PlayerCameraFocusing(player);
-                bool isMyTurn = turnIndex == playerNumber;
-                Debug.Log($"현재 턴: {turnIndex}, 나의 턴: {playerNumber}.");
+                bool isMyTurn = turnIndex == playerTurnNumber;
+                Debug.Log($"현재 턴: {turnIndex}, 나의 턴: {playerTurnNumber}.");
                 if (isMyTurn)
                 {
                     Debug.Log($"나의 턴.");
@@ -200,7 +236,7 @@ public class IngameManager : NetworkBehaviour
 
     public bool IsMyTurn()
     {
-        return _netTurnIndex.Value == playerNumber;
+        return _netTurnIndex.Value == playerTurnNumber;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -220,6 +256,7 @@ public class IngameManager : NetworkBehaviour
 
         CheckGameEndCondition();
     }
+
     bool CheckGameEndCondition()
     {
         // 최소한 게임이 시작됐다는것을 확인하고 나서 종료조건 확인

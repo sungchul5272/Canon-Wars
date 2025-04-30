@@ -30,14 +30,13 @@ public class GameInitializer : NetworkBehaviour
 
     public CameraController _camController { get; private set; }
 
-    private NetworkVariable<int> _netPlayerNumber = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> _netMapIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkList<Vector3> _spawnPosList = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    //private NetworkVariable<eTankType> _spawnTankType = new(eTankType.Max, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private Dictionary<ulong, UserData> _clientUserData = new();
+    private List<bool> _allDones = new();
 
-    private NetworkVariable<eTankType> _spawnTankType = new(eTankType.Max, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    private bool _allReady = false;
+    private float _gameLoadingTimeout = 20;
 
     void Awake()
     {
@@ -117,16 +116,33 @@ public class GameInitializer : NetworkBehaviour
 
         if (IsServer)
         {
-            while (!_allReady)
-            {
-                yield return null;
-            }
-
+            yield return WaitAllClientsAsync();
             yield return new WaitForSeconds(1f);
+
+            AssignTurnNumbers();
+            yield return WaitAllClientsAsync();
+
             IngameManager.Instance.SetStartTurnIndex();
             IngameManager.Instance.StartGame();
-            StartGameClientRpc();
         }
+    }
+
+    IEnumerator WaitAllClientsAsync()
+    {
+        float timer = 0;
+        while (_allDones.Count < NetworkPlayerData.GetMaxPlayer())
+        {
+            if (timer >= _gameLoadingTimeout)
+            {
+                Debug.LogWarning("타임아웃되어 로비로 돌아갑니다.");
+                IngameManager.Instance.BackToLobby();
+            }
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        _allDones.Clear();
     }
 
     private void UpdateLoadingMapBackground(int mapIndex)
@@ -146,21 +162,20 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
-    [ClientRpc]
-    private void SetPlayerNumberClientRpc(int value)
-    {
-        IngameManager instance = IngameManager.Instance;
-        if (instance.playerNumber < 0)
-        {
-            instance.playerNumber = value;
-        }
-    }
+    //[ClientRpc]
+    //private void SetPlayerNumberClientRpc(int value)
+    //{
+    //    IngameManager instance = IngameManager.Instance;
+    //    if (instance.playerTurnNumber < 0)
+    //    {
+    //        instance.playerTurnNumber = value;
+    //    }
+    //}
 
     [ServerRpc(RequireOwnership = false)]
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
-        _netPlayerNumber.Value++;
-
+        //_netPlayerNumber.Value++;
         int randIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
         Vector3 spawnPos = _spawnPosList[randIndex];
         _spawnPosList.RemoveAt(randIndex);
@@ -170,25 +185,51 @@ public class GameInitializer : NetworkBehaviour
         TankDataSO tankData = GetSelectedTankData(tankType);
         GameObject tank = Instantiate(tankData._tankPrefab, spawnPos, Quaternion.identity);
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        SetPlayerNumberClientRpc(_netPlayerNumber.Value);
-        Debug.Log($"[GameInitializer] ID: {clientId}, 플레이어 넘버: {_netPlayerNumber.Value}, 스폰 위치: {spawnPos}");
+        //SetPlayerNumberClientRpc(_netPlayerNumber.Value);
+        Debug.Log($"[GameInitializer] ID: {clientId}, 스폰 위치: {spawnPos}");
 
         PlayerController tankController = tank.GetComponent<PlayerController>();
         tankController._tankType.Value = tankData._tankType;
 
-        // 모든 플레이어가 들어왔을 경우
-        if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
+        _allDones.Add(true);
+    }
+
+    void AssignTurnNumbers()
+    {
+        // 턴 넘버 배정
+        int turnNumber = 0;
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            _allReady = true;
+            StartGameClientRpc(turnNumber, new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new List<ulong> { clientId }
+                }
+            });
+
+            turnNumber++;
         }
     }
 
     [ClientRpc]
-    private void StartGameClientRpc()
+    private void StartGameClientRpc(int turnNumber, ClientRpcParams clientRpcParams = default)
     {
+        // 클라이언트가 자신의 턴 넘버를 저장
+        IngameManager.Instance.playerTurnNumber = turnNumber;
+        Debug.Log($"My turn number: {turnNumber}");
+
         _loadingUI.SetActive(false);
         _ingameUI.gameObject.SetActive(true);
         Debug.Log("[GameInitializer] 초기화 완료! UI 전환");
+
+        SendAllDoneServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SendAllDoneServerRpc()
+    {
+        _allDones.Add(true);
     }
 
     private TankDataSO GetSelectedTankData(eTankType tankType)
