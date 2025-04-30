@@ -14,12 +14,28 @@ public class ShellEllipse : Shell
     public override void Init()
     {
         base.Init();
+    }
 
+    public void TrailClear()
+    {
+        // 풀에서 꺼낸 직후에 TrailRenderer 초기화
         if (_trailRenderer != null)
         {
-            _trailRenderer.Clear();
+            if (gameObject.activeInHierarchy == true)
+            {
+                _trailRenderer.Clear();
+                _trailRenderer.emitting = true;
+                _trailRenderer.time = 0.25f;
+            }
+            else
+            {
+                _trailRenderer.Clear();
+                _trailRenderer.emitting = false;
+                _trailRenderer.time = -1f; // 완전 제거
+            }
         }
     }
+
     public override void CheckExplosion()
     {
         Debug.DrawRay(transform.position, Vector2.down * 0.5f, Color.magenta);
@@ -68,6 +84,16 @@ public class ShellEllipse : Shell
         if (filteredPlayerList.Count > 0)
         {
             // 데미지 주기
+            foreach (var col in filteredPlayerList)
+            {
+                var player = col.GetComponent<PlayerController>();
+
+                // 맞은 객체가 나인 경우에만 데미지 처리
+                if (player != null && player.IsOwner)
+                {
+                    player.ApplyLocalDamage(20);
+                }
+            }
         }
 
         if (hitGroundList.Length > 0)
@@ -84,12 +110,12 @@ public class ShellEllipse : Shell
 
     private void OnEnable()
     {
-        // 풀에서 꺼낸 직후에 TrailRenderer 초기화
-        var trail = GetComponent<TrailRenderer>();
-        if (trail != null)
-        {
-            trail.Clear();
-        }
+        Invoke("TrailClear", 0.1f);
+    }
+
+    private void OnDisable()
+    {
+        Invoke("TrailClear" ,0.1f);
     }
 }
 

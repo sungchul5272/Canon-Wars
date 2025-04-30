@@ -170,7 +170,6 @@ public class Shell : NetworkBehaviour
                 if (player != null && player.IsOwner)
                 {
                     player.ApplyLocalDamage(20);
-
                 }
             }
 
