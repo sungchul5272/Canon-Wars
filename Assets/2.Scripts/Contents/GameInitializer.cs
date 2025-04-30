@@ -30,6 +30,7 @@ public class GameInitializer : NetworkBehaviour
 
     public CameraController _camController { get; private set; }
 
+    private NetworkVariable<int> _netPlayerNumber = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> _netMapIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkList<Vector3> _spawnPosList = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private Dictionary<ulong, UserData> _clientUserData = new();
@@ -158,8 +159,7 @@ public class GameInitializer : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
-        IngameManager instance = IngameManager.Instance;
-        instance.playerNumber++;
+        _netPlayerNumber.Value++;
 
         int randIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
         Vector3 spawnPos = _spawnPosList[randIndex];
@@ -170,8 +170,8 @@ public class GameInitializer : NetworkBehaviour
         TankDataSO tankData = GetSelectedTankData(tankType);
         GameObject tank = Instantiate(tankData._tankPrefab, spawnPos, Quaternion.identity);
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        SetPlayerNumberClientRpc(instance.playerNumber);
-        Debug.Log($"[GameInitializer] ID: {clientId}, 플레이어 넘버: {instance.playerNumber}, 스폰 위치: {spawnPos}");
+        SetPlayerNumberClientRpc(_netPlayerNumber.Value);
+        Debug.Log($"[GameInitializer] ID: {clientId}, 플레이어 넘버: {_netPlayerNumber.Value}, 스폰 위치: {spawnPos}");
 
         PlayerController tankController = tank.GetComponent<PlayerController>();
         tankController._tankType.Value = tankData._tankType;
@@ -179,7 +179,7 @@ public class GameInitializer : NetworkBehaviour
         // 모든 플레이어가 들어왔을 경우
         if (NetworkManager.Singleton.ConnectedClients.Count == NetworkPlayerData.GetMaxPlayer())
         {
-            instance.playerNumber = 0;
+            //instance.playerNumber = 0;
             _allReady = true;
         }
     }
