@@ -185,7 +185,6 @@ public class PlayerController : NetworkBehaviour
             else
             {
                 // 1번 폭탄
-                //_curShell = _shellList[0];
                 _curShellIndex = 0;
                 Debug.Log($"Selected Shell = {_shellList[_curShellIndex].name}");
             }
@@ -199,7 +198,6 @@ public class PlayerController : NetworkBehaviour
             else
             {
                 // 2번 폭탄
-                //_curShell = _shellList[1];  
                 _curShellIndex = 1;
 
                 Debug.Log($"Selected Shell = {_shellList[_curShellIndex].name}");
@@ -237,7 +235,6 @@ public class PlayerController : NetworkBehaviour
                 StopCoroutine(_corGenerateShell);
 
             _corGenerateShell = StartCoroutine(CorGenerateShell());
-            //GenerationShellServerRpc(_curShellPower);
 
             // 이전 파워 값 저장
             _prevShellPower = _curShellPower;
@@ -268,27 +265,6 @@ public class PlayerController : NetworkBehaviour
             ShowPredictionPoints(0.1f);
         }
 
-        //// 땅 위에 있는지 확인
-        //if (_isGround)
-        //{
-        //    _dirX = Input.GetAxis("Horizontal");
-
-        //    // 포 각도 조절중에는 움직일 수 없음
-        //    if (_dirY == 0 && _curFuel > 0f)
-        //        transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
-
-        //    if (_dirX != 0f)
-        //    {
-        //        // 연료 사용
-        //        UseFuel();
-
-        //        // 좌우 반전
-        //        Flip(_dirX);
-
-        //        // 이동중에 예측지점 숨기기
-        //        HidePredictionsPoints();
-        //    }
-        //}
         if (_isGround)
         {
             _dirX = Input.GetAxis("Horizontal");
