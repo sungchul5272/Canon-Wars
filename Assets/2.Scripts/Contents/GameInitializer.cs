@@ -129,14 +129,14 @@ public class GameInitializer : NetworkBehaviour
         }
         else
         {
-            while (singleton.IsListening)
+            while (_allDones.Count <= 0)
             {
-                yield return null;
-
-                if (IngameManager.Instance.playerTurnNumber >= 0)
+                if (!singleton.IsListening)
                 {
                     break;
                 }
+
+                yield return null;
             }
 
             if (!singleton.IsListening)
@@ -246,6 +246,11 @@ public class GameInitializer : NetworkBehaviour
         SoundManager.Instance.PlayIngameBGM(mapIndex);
 
         Debug.Log("[GameInitializer] 초기화 완료! UI 전환");
+
+        if (!IsServer)
+        {
+            _allDones.Add(true);
+        }
 
         SendAllDoneServerRpc();
     }

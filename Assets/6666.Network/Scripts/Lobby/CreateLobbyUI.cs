@@ -25,6 +25,7 @@ public class CreateLobbyUI : MonoBehaviour
         // 로비 생성
         createButton.onClick.AddListener(() =>
         {
+            createButton.interactable = false;
             SoundManager.Instance.PlayButtonClick();
             EGameMode gameMode = (EGameMode)Enum.Parse(typeof(EGameMode), $"Mode{gameModeDropDown.options[gameModeDropDown.value].text}");
             instance.CreateLobby(gameMode, nameInputField.text, privateToggle.isOn, string.Empty);

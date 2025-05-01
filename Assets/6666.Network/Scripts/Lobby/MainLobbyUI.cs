@@ -172,7 +172,7 @@ public class MainLobbyUI : MonoBehaviour
         mapNameText.text = _changedMapType.ToString();
 
         // 맵 변경 버튼 활성화 여부
-        mapChangeButton.gameObject.SetActive(_changedMapType != instance.selectedMapType);
+        mapChangeButton.gameObject.SetActive(_changedMapType != instance.SelectedMapType);
     }
 
     void OnClick_MapRight()
@@ -199,7 +199,7 @@ public class MainLobbyUI : MonoBehaviour
         mapNameText.text = _changedMapType.ToString();
 
         // 맵 변경 버튼 활성화 여부
-        mapChangeButton.gameObject.SetActive(_changedMapType != instance.selectedMapType);
+        mapChangeButton.gameObject.SetActive(_changedMapType != instance.SelectedMapType);
     }
 
     public void EnterMainLobbyUI(string lobbyName, string lobbyCode)
@@ -208,13 +208,13 @@ public class MainLobbyUI : MonoBehaviour
         LobbyManager instance = LobbyManager.Instance;
 
         // 탱크 랜덤으로 리셋
-        instance.selectedTankType = eTankType.Random;
+        instance.SelectedTankType = eTankType.Random;
 
         // 맵 랜덤으로 리셋
         contentMap.offsetMin = new Vector2(0, -256f);
         _changedMapType = eMapType.Random;
-        instance.selectedMapType = eMapType.Random;
-        mapNameText.text = instance.selectedMapType.ToString();
+        instance.SelectedMapType = eMapType.Random;
+        mapNameText.text = instance.SelectedMapType.ToString();
 
         // UI 리셋
         instance.createLobbyUI.gameObject.SetActive(false);
@@ -267,7 +267,7 @@ public class MainLobbyUI : MonoBehaviour
         playerScrollView.gameObject.SetActive(true);
         SetTankSelectInteractable(true);
 
-        if (instance.IsLobbyHost && _changedMapType == instance.selectedMapType)
+        if (instance.IsLobbyHost && _changedMapType == instance.SelectedMapType)
         {
             leftMapButton.interactable = true;
             rightMapButton.interactable = true;
@@ -303,12 +303,12 @@ public class MainLobbyUI : MonoBehaviour
     public void ShowSelectedMap(eMapType mapType)
     {
         LobbyManager instance = LobbyManager.Instance;
-        instance.selectedMapType = mapType;
+        instance.SelectedMapType = mapType;
 
-        float moveX = -512f * ((int)instance.selectedMapType + 1);
+        float moveX = -512f * ((int)instance.SelectedMapType + 1);
         contentMap.offsetMin = new Vector2(moveX, contentMap.offsetMin.y);
 
-        mapNameText.text = instance.selectedMapType.ToString();
+        mapNameText.text = instance.SelectedMapType.ToString();
     }
 
     public void SetTankSelectInteractable(bool value)
@@ -331,8 +331,8 @@ public class MainLobbyUI : MonoBehaviour
     void GetSelectTankType(eTankType tankType)
     {
         LobbyManager instance = LobbyManager.Instance;
-        instance.selectedTankType = tankType;
-        instance.ChangeTank(instance.selectedTankType);
+        instance.SelectedTankType = tankType;
+        instance.ChangeTank(instance.SelectedTankType);
     }
 
     void ApplySelectedMap(eMapType mapType)

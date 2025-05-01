@@ -28,6 +28,7 @@ public class SortLobbyUI : MonoBehaviour
         // 비공개 로비 참가
         joinPrivateButton.onClick.AddListener(() =>
         {
+            joinPrivateButton.interactable = false;
             SoundManager.Instance.PlayButtonClick();
             LobbyManager.Instance.JoinLobby(lobbyCodeInputField.text, -1, string.Empty);
         });
@@ -50,6 +51,7 @@ public class SortLobbyUI : MonoBehaviour
 
     void OnEnable()
     {
+        joinPrivateButton.interactable = true;
         lobbyScrollView.gameObject.SetActive(false);
         LobbyManager instance = LobbyManager.Instance;
         instance.RefreshPublicLobbies(GameMode);

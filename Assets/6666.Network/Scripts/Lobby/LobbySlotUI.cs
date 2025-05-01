@@ -13,10 +13,13 @@ public class LobbySlotUI : MonoBehaviour
     {
         LobbyManager instance = LobbyManager.Instance;
 
+        joinButton.enabled = true;
+
         // 참가 버튼
         joinButton.onClick.RemoveAllListeners();
         joinButton.onClick.AddListener(() =>
         {
+            joinButton.enabled = false;
             instance.JoinLobby(string.Empty, transform.GetSiblingIndex(), string.Empty);
         });
     }

@@ -38,7 +38,10 @@ public class LobbyManager : MonoBehaviour
     public SortLobbyUI sortLobbyUI;
     public MainLobbyUI mainLobbyUI;
     public GameObject loadingUI;
-    public string gameSceneName;
+    public GameObject sessionEndedUI;
+    public GameObject connectionFailedUI;
+    public Button sessionEndedButton;
+    public Button connectionFailButton;
 
     public static LobbyManager Instance { get; private set; }
 
@@ -47,8 +50,8 @@ public class LobbyManager : MonoBehaviour
 
     public bool IsLobbyHost => _joinedLobby != null && (_joinedLobby.HostId == AuthenticationService.Instance.PlayerId);
 
-    public eMapType selectedMapType = eMapType.Random;
-    public eTankType selectedTankType = eTankType.Random;
+    public eMapType SelectedMapType { get; set; } = eMapType.Random;
+    public eTankType SelectedTankType { get; set; } = eTankType.Random;
 
     Lobby _joinedLobby;
     Coroutine _autoNetworkShutdown;
@@ -57,6 +60,7 @@ public class LobbyManager : MonoBehaviour
     readonly string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 대문자 알파벳과 숫자
 
     string _playerName;
+    string _gameSceneName = "3.IngameScene";
     string _playerNameDataKey = "PlayerName";
     string _playerReadyDataKey = "PlayerReady";
     string _playerSelectTankDataKey = "PlayerSelectTank";
@@ -127,9 +131,21 @@ public class LobbyManager : MonoBehaviour
             SoundManager.Instance.PlayButtonClick();
             UnityEditor.EditorApplication.isPlaying = false;
 #else
- SoundManager.Instance.PlayButtonClick();
+            SoundManager.Instance.PlayButtonClick();
             Application.Quit();
 #endif
+        });
+
+        // 세션 종료 확인
+        sessionEndedButton.onClick.AddListener(() =>
+        {
+            sessionEndedUI.SetActive(false);
+        });
+
+        // 연결 실패 확인
+        connectionFailButton.onClick.AddListener(() =>
+        {
+            connectionFailedUI.SetActive(false);
         });
     }
 
@@ -153,6 +169,7 @@ public class LobbyManager : MonoBehaviour
                     // 연결이 끊긴 경우
                     Debug.Log("연결이 끊겼으므로 시작 메뉴로 이동합니다.");
                     startPanel.SetActive(true);
+                    sessionEndedUI.SetActive(true);
                 }
 
                 return;
@@ -173,12 +190,20 @@ public class LobbyManager : MonoBehaviour
 
     async void SetSceneToMainLobby()
     {
+        NetworkManager singleton = NetworkManager.Singleton;
+        if (singleton.ConnectedClients.Count != NetworkPlayerData.GetMaxPlayer())
+        {
+            connectionFailedUI.SetActive(true);
+        }
+
         // 메인 로비로 복귀
         startPanel.SetActive(true);
         startLobbyUI.gameObject.SetActive(false);
         mainLobbyUI.gameObject.SetActive(true);
         loadingUI.SetActive(true);
-        if (NetworkManager.Singleton.IsServer)
+
+
+        if (singleton.IsServer)
         {
             Debug.Log("복귀할 로비 재생성.");
 
@@ -189,7 +214,7 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log("복귀할 로비 탐색.");
             string lobbyId = string.Empty;
-            while (NetworkManager.Singleton.IsListening)
+            while (singleton.IsListening)
             {
                 try
                 {
@@ -616,7 +641,7 @@ public class LobbyManager : MonoBehaviour
                 }
             });
 
-            selectedMapType = mapType;
+            SelectedMapType = mapType;
             Debug.Log($"Map changed to: {mapType}");
         }
         catch (LobbyServiceException ex)
@@ -682,7 +707,7 @@ public class LobbyManager : MonoBehaviour
             Invoke(nameof(LoadGameScene), _rateLimitTime);
             EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
             string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-            NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
+            NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
             _joinedLobby = null;
         }
         catch (LobbyServiceException ex)
@@ -700,7 +725,7 @@ public class LobbyManager : MonoBehaviour
         CancelInvoke(nameof(RefreshPlayers));
         EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
         string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-        NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
+        NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
         _joinedLobby = null;
     }
 
@@ -839,7 +864,7 @@ public class LobbyManager : MonoBehaviour
     void LoadGameScene()
     {
         // 게임 씬 로드
-        NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene(_gameSceneName, LoadSceneMode.Single);
     }
 
     Unity.Services.Lobbies.Models.Player GetPlayer(bool isHost)
