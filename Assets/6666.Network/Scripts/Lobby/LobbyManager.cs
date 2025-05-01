@@ -76,6 +76,7 @@ public class LobbyManager : MonoBehaviour
 
     void Start()
     {
+        SoundManager.Instance.PlayLobbySceneBGM();
         _joinedLobby = null;
         _isGameStart = false;
 
@@ -95,6 +96,7 @@ public class LobbyManager : MonoBehaviour
         // 시작하기
         startButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             startPanel.SetActive(true);
             infoPanel.SetActive(false);
             optionPanel.SetActive(false);
@@ -103,6 +105,7 @@ public class LobbyManager : MonoBehaviour
         // 내 정보
         infoButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             startPanel.SetActive(false);
             infoPanel.SetActive(true);
             optionPanel.SetActive(false);
@@ -111,6 +114,7 @@ public class LobbyManager : MonoBehaviour
         // 옵션
         optionButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             startPanel.SetActive(false);
             infoPanel.SetActive(false);
             optionPanel.SetActive(true);
@@ -120,8 +124,10 @@ public class LobbyManager : MonoBehaviour
         exitButton.onClick.AddListener(() =>
         {
 #if UNITY_EDITOR
+            SoundManager.Instance.PlayButtonClick();
             UnityEditor.EditorApplication.isPlaying = false;
 #else
+ SoundManager.Instance.PlayButtonClick();
             Application.Quit();
 #endif
         });

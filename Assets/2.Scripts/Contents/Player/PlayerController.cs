@@ -67,6 +67,7 @@ public class PlayerController : NetworkBehaviour
     private bool _isFire = false;
     private bool _bAfterDeadEvent = false;       // 죽음 이후 이벤트 한번만 실행하기 위한 bool
     private bool _isCanFire = false;
+    private bool _isMoving = false;
 
     private NetworkObject _curSpawnedShell;
     public NetworkVariable<int> _hp = new(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -260,25 +261,63 @@ public class PlayerController : NetworkBehaviour
             ShowPredictionPoints(0.1f);
         }
 
-        // 땅 위에 있는지 확인
+        //// 땅 위에 있는지 확인
+        //if (_isGround)
+        //{
+        //    _dirX = Input.GetAxis("Horizontal");
+
+        //    // 포 각도 조절중에는 움직일 수 없음
+        //    if (_dirY == 0 && _curFuel > 0f)
+        //        transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
+
+        //    if (_dirX != 0f)
+        //    {
+        //        // 연료 사용
+        //        UseFuel();
+
+        //        // 좌우 반전
+        //        Flip(_dirX);
+
+        //        // 이동중에 예측지점 숨기기
+        //        HidePredictionsPoints();
+        //    }
+        //}
         if (_isGround)
         {
             _dirX = Input.GetAxis("Horizontal");
 
-            // 포 각도 조절중에는 움직일 수 없음
-            if (_dirY == 0 && _curFuel > 0f)
-                transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
-
             if (_dirX != 0f)
             {
-                // 연료 사용
-                UseFuel();
+                Flip(_dirX); // 항상 가능해야 함
 
-                // 좌우 반전
-                Flip(_dirX);
+                if (_dirY == 0 && _curFuel > 0f)
+                {
+                    transform.Translate(_dirX * _speed * Time.deltaTime, 0, 0, Space.World);
+                    UseFuel();
+                    HidePredictionsPoints();
 
-                // 이동중에 예측지점 숨기기
-                HidePredictionsPoints();
+                    if (!_isMoving)
+                    {
+                        _isMoving = true;
+                        NotifyTankMoveServerRpc(true);
+                    }
+                }
+                else
+                {
+                    if (_isMoving)
+                    {
+                        _isMoving = false;
+                        NotifyTankMoveServerRpc(false);
+                    }
+                }
+            }
+            else
+            {
+                if (_isMoving)
+                {
+                    _isMoving = false;
+                    NotifyTankMoveServerRpc(false);
+                }
             }
         }
         else
@@ -626,5 +665,20 @@ public class PlayerController : NetworkBehaviour
         // Default
         //_curShell = _shellList[0];
         _curShellIndex = 0;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    void NotifyTankMoveServerRpc(bool isMoving)
+    {
+        NotifyTankMoveClientRpc(isMoving);
+    }
+
+    [ClientRpc]
+    void NotifyTankMoveClientRpc(bool isMoving)
+    {
+        if (isMoving)
+            SoundManager.Instance.StartTankMoveLoop();
+        else
+            SoundManager.Instance.StopTankMoveLoop();
     }
 }

@@ -14321,10 +14321,10 @@ MonoBehaviour:
   _masterPercentText: {fileID: 276379594}
   _bgmSlider: {fileID: 983435851}
   _bgmPercentText: {fileID: 811633418}
-  _sfxSlider: {fileID: 983435851}
-  _sfxPercentText: {fileID: 811633418}
+  _sfxSlider: {fileID: 1629668548}
+  _sfxPercentText: {fileID: 2033311345}
   resolutionDropdown: {fileID: 2124269450}
-  audioMixer: {fileID: 0}
+  audioMixer: {fileID: 24100000, guid: e4f72ce7447f6f34c8023138935c7e38, type: 2}
   _confirmBtn: {fileID: 5087266}
   _closeBtns:
   - {fileID: 1611691584}

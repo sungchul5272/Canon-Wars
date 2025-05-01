@@ -124,6 +124,8 @@ public class Shell : NetworkBehaviour
         Vector2 fireDir = transform.right * Mathf.Sign(transform.localScale.x);
         _rb2D.AddForce(fireDir * _power, ForceMode2D.Impulse);
 
+        PlaySFXMissileFireClientRpc();
+
         // 값 초기화
         if (IsServer)
             _isShellMapOut.Value = false;
@@ -150,6 +152,7 @@ public class Shell : NetworkBehaviour
     [ClientRpc]
     public virtual void CheckExplosionClientRpc(Vector2 colliderCenter)
     {
+        PlaySFXMissileExplosionClientRpc();
         // 파티클 생성
         CreateExplosionParticle();
 
@@ -232,6 +235,17 @@ public class Shell : NetworkBehaviour
         camShake.Shake(_shakeDurtaion, _shakeMagnitude);
     }
 
+    [ClientRpc]
+    void PlaySFXMissileFireClientRpc()
+    {
+        SoundManager.Instance.PlayFire();
+    }
+
+    [ClientRpc]
+    void PlaySFXMissileExplosionClientRpc()
+    {
+        SoundManager.Instance.PlayExplosion();
+    }
     //private void DebugExplosionCircle(Vector2 position, float radius)
     //{
     //    GameObject debugCircle = new GameObject("ExplosionDebugCircle");

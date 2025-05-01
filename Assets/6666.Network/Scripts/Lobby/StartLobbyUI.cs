@@ -16,6 +16,7 @@ public class StartLobbyUI : MonoBehaviour
         // 호스트
         hostButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             gameObject.SetActive(false);
             instance.createLobbyUI.gameObject.SetActive(true);
         });
@@ -23,6 +24,7 @@ public class StartLobbyUI : MonoBehaviour
         // 참가
         joinButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             gameObject.SetActive(false);
             instance.sortLobbyUI.gameObject.SetActive(true);
         });

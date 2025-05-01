@@ -106,6 +106,7 @@ public class GameInitializer : NetworkBehaviour
 
             // 맵 생성
             _mapSpawner.SpawnSelectMap(_netMapIndex.Value);
+
             UpdateLoadingMapBackground(_netMapIndex.Value);
         }
 
@@ -240,6 +241,10 @@ public class GameInitializer : NetworkBehaviour
 
         _loadingUI.SetActive(false);
         _ingameUI.gameObject.SetActive(true);
+
+        int mapIndex = _netMapIndex.Value;
+        SoundManager.Instance.PlayIngameBGM(mapIndex);
+
         Debug.Log("[GameInitializer] 초기화 완료! UI 전환");
 
         SendAllDoneServerRpc();
@@ -409,4 +414,5 @@ public class GameInitializer : NetworkBehaviour
         _enemyWinRateText.text = $"승률 {enemyWinRate:F1}%";
         Debug.Log($"[클라이언트] 상대 승률 수신 완료"); 
     }
+
 }

@@ -44,6 +44,7 @@ public class MainLobbyUI : MonoBehaviour
         // 준비
         readyToggle.onValueChanged.AddListener((_) =>
         {
+            SoundManager.Instance.PlayButtonClick();
             readyToggle.interactable = false;
             instance.ReadyPlayer(readyToggle.isOn);
         });
@@ -51,18 +52,21 @@ public class MainLobbyUI : MonoBehaviour
         // 게임 시작
         playButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             instance.StartGameAsHost();
         });
 
         // 로비 코드 복사
         copyCodeButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             GUIUtility.systemCopyBuffer = lobbyCodeText.text;
         });
 
         // 로비가 삭제된 경우 확인 버튼
         sessionEndedButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             sessionEndedUI.SetActive(false);
             LeaveMainLobbyUI();
         });
@@ -70,6 +74,7 @@ public class MainLobbyUI : MonoBehaviour
         // 추방된 경우 확인 버튼
         kickedButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             kickedUI.SetActive(false);
             LeaveMainLobbyUI();
         });
@@ -77,6 +82,7 @@ public class MainLobbyUI : MonoBehaviour
         // 맵 변경 적용 버튼
         mapChangeButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             mapChangeButton.interactable = false;
             leftMapButton.interactable = false;
             rightMapButton.interactable = false;

@@ -33,9 +33,24 @@ public class OptionPanel : MonoBehaviour
 
     void Start()
     {
-        _masterSlider.onValueChanged.AddListener(OnChangeMasterVolume);
-        _bgmSlider.onValueChanged.AddListener(OnChangeBGMVolume);
-        _sfxSlider.onValueChanged.AddListener(OnChangeSFXVolume);
+        _masterSlider.onValueChanged.AddListener(value =>
+        {
+            UpdateVolumeText(_masterPercentText, value);
+            SetMixerVolume("MasterVolume", value);
+        });
+
+        _bgmSlider.onValueChanged.AddListener(value =>
+        {
+            UpdateVolumeText(_bgmPercentText, value);
+            SetMixerVolume("BGMVolume", value);
+        });
+
+        _sfxSlider.onValueChanged.AddListener(value =>
+        {
+            UpdateVolumeText(_sfxPercentText, value);
+            SetMixerVolume("SFXVolume", value);
+        });
+
         resolutionDropdown.onValueChanged.AddListener(OnChangeResolution);
 
         _confirmBtn.onClick.AddListener(OnClickConfirm);
@@ -59,16 +74,7 @@ public class OptionPanel : MonoBehaviour
         _sfxSlider.value = _prevSfxVolume;
         resolutionDropdown.value = _prevResolutionIndex;
 
-        UpdateVolumeText();
-
-        if (audioMixer != null)
-        {
-            ApplyMixerVolumes();
-        }
-        else
-        {
-            Debug.LogWarning("[OptionPanel] AudioMixer가 연결되지 않았습니다.");
-        }
+        ApplyMixerVolumes();
     }
 
     private void InitResolutionOptions()
@@ -89,39 +95,6 @@ public class OptionPanel : MonoBehaviour
         resolutionDropdown.AddOptions(options);
     }
 
-    public void OnChangeMasterVolume(float value)
-    {
-        int percent = Mathf.RoundToInt(value * 100);
-        _masterPercentText.text = percent + "%";
-
-        if (audioMixer != null)
-        {
-            audioMixer.SetFloat("MasterVolume", Mathf.Log10(value) * 20);
-        }
-    }
-
-    public void OnChangeBGMVolume(float value)
-    {
-        int percent = Mathf.RoundToInt(value * 100);
-        _bgmPercentText.text = percent + "%";
-
-        if (audioMixer != null)
-        {
-            audioMixer.SetFloat("BGMVolume", Mathf.Log10(value) * 20);
-        }
-    }
-
-    public void OnChangeSFXVolume(float value)
-    {
-        int percent = Mathf.RoundToInt(value * 100);
-        _sfxPercentText.text = percent + "%";
-
-        if (audioMixer != null) 
-        {
-            audioMixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
-        }
-    }
-
     public void OnChangeResolution(int index)
     {
         Resolution res = _resolutions[index];
@@ -130,45 +103,50 @@ public class OptionPanel : MonoBehaviour
 
     public void OnClickConfirm()
     {
+        SoundManager.Instance.PlayButtonClick();
         PlayerPrefs.SetFloat("masterVolume", _masterSlider.value);
         PlayerPrefs.SetFloat("bgmVolume", _bgmSlider.value);
         PlayerPrefs.SetFloat("sfxVolume", _sfxSlider.value);
         PlayerPrefs.SetInt("resolutionIndex", resolutionDropdown.value);
         PlayerPrefs.Save();
+
         gameObject.SetActive(false);
     }
 
     public void OnClickClose()
     {
+        SoundManager.Instance.PlayButtonClick();
         _masterSlider.value = _prevMasterVolume;
         _bgmSlider.value = _prevBgmVolume;
         _sfxSlider.value = _prevSfxVolume;
         resolutionDropdown.value = _prevResolutionIndex;
 
-        UpdateVolumeText();
-
-        if (audioMixer != null)
-        {
-            ApplyMixerVolumes();
-        }
-
+        ApplyMixerVolumes();
         gameObject.SetActive(false);
     }
 
     void ApplyMixerVolumes()
     {
-        if (audioMixer != null) 
+        SetMixerVolume("MasterVolume", _masterSlider.value);
+        SetMixerVolume("BGMVolume", _bgmSlider.value);
+        SetMixerVolume("SFXVolume", _sfxSlider.value);
+
+        UpdateVolumeText(_masterPercentText, _masterSlider.value);
+        UpdateVolumeText(_bgmPercentText, _bgmSlider.value);
+        UpdateVolumeText(_sfxPercentText, _sfxSlider.value);
+    }
+
+    void SetMixerVolume(string paramName, float sliderValue)
+    {
+        if (audioMixer != null)
         {
-            audioMixer.SetFloat("MasterVolume", Mathf.Log10(_masterSlider.value) * 20);
-            audioMixer.SetFloat("BGMVolume", Mathf.Log10(_bgmSlider.value) * 20);
-            audioMixer.SetFloat("SFXVolume", Mathf.Log10(_sfxSlider.value) * 20);
+            float volume = Mathf.Log10(Mathf.Clamp(sliderValue, 0.0001f, 1f)) * 20f;
+            audioMixer.SetFloat(paramName, volume);
         }
     }
 
-    void UpdateVolumeText()
+    void UpdateVolumeText(Text textField, float value)
     {
-        _masterPercentText.text = Mathf.RoundToInt(_masterSlider.value * 100) + "%";
-        _bgmPercentText.text = Mathf.RoundToInt(_bgmSlider.value * 100) + "%";
-        _sfxPercentText.text = Mathf.RoundToInt(_sfxSlider.value * 100) + "%";
+        textField.text = Mathf.RoundToInt(value * 100f) + "%";
     }
 }

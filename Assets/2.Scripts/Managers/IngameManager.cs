@@ -311,16 +311,19 @@ public class IngameManager : NetworkBehaviour
         if (winnerId == ulong.MaxValue)
         {
             FirebaseManager._instance.addBattleInnfo("¹«");
+            SoundManager.Instance.PlayDraw();
             resultKey = "¹«";
         }
         else if (NetworkManager.Singleton.LocalClientId == winnerId)
         {
             FirebaseManager._instance.addBattleInnfo("½Â");
+            SoundManager.Instance.PlayWin();
             resultKey = "½Â";
         }
         else
         {
             FirebaseManager._instance.addBattleInnfo("ÆÐ");
+            SoundManager.Instance.PlayLose();
             resultKey = "ÆÐ";
         }
 

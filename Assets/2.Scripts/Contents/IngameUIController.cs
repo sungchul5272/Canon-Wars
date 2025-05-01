@@ -61,16 +61,17 @@ public class IngameUIController : MonoBehaviour
         _fuelBar.value = Mathf.Clamp(value, 0, 100);
     }
 
-    // 바람 세기 및 방향 표시
     public void SetWind(float wind)
     {
-        if (wind > 0)
-            _windText.text = $"> {wind:F1}";
-        else if (wind < 0)
-            _windText.text = $"< {-wind:F1}";
-        else
-            _windText.text = "-";
+        float absWind = Mathf.Abs(wind);
+        _windText.text = $"{absWind:F1} m/s";
+
+        Vector3 scale = _wind.transform.localScale;
+        scale.x = wind < 0 ? -1 : 1;
+        _wind.transform.localScale = scale;
+
     }
+
     void UpdateTurnUI()
     {
         if (IngameManager.Instance == null || !IngameManager.Instance.IsSpawned)

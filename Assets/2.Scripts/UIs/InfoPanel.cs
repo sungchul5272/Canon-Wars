@@ -141,6 +141,7 @@ public class InfoPanel : MonoBehaviour
 
     void OnClickClose()
     {
+        SoundManager.Instance.PlayButtonClick();
         gameObject.SetActive(false);
     }
 }

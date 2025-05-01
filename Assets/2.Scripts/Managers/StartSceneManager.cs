@@ -36,18 +36,22 @@ public class StartSceneManager : MonoBehaviour
 
     void Start()
     {
+        SoundManager.Instance.PlayStartSceneBGM();
         //메인 디폴트 화면의 Button Action 부여
         {
             //회원가입 Button.
             _signUpBtn.onClick.AddListener(
+
                 delegate
                 {
+                    SoundManager.Instance.PlayButtonClick();
                     Check_Empty_BaseInputField(delegate
                     {
                         //password 찾기를 이용
                         _fm.Get_UserPW(_idField.text,
                             delegate
                             {
+
                                 //이미 동일한 ID가 존재한다면.
                                 if (!string.IsNullOrEmpty(_fm.userVO.UserID))
                                 {
@@ -69,6 +73,7 @@ public class StartSceneManager : MonoBehaviour
             _loginBtn.onClick.AddListener(
                 delegate
                 {
+                    SoundManager.Instance.PlayButtonClick();
                     Check_Empty_BaseInputField(delegate
                     {
                         OnLoginClick();
@@ -111,6 +116,7 @@ public class StartSceneManager : MonoBehaviour
             _createAccountBtn.onClick.AddListener(
                 delegate
                 {
+                    SoundManager.Instance.PlayButtonClick();
                     if (string.IsNullOrEmpty(_nickNameField.text))
                     {
                         _maskImage.raycastTarget = true;
@@ -151,6 +157,7 @@ public class StartSceneManager : MonoBehaviour
 
     void OnLoginClick()
     {
+        SoundManager.Instance.PlayButtonClick();
         string email = _idField.text;
         string password = _passwordField.text;
 
@@ -171,11 +178,13 @@ public class StartSceneManager : MonoBehaviour
 
     void OnSignUpClick()
     {
+        SoundManager.Instance.PlayButtonClick();
         Debug.Log("회원가입버튼 클릭");
     }
 
     void OnExitClick()
     {
+        SoundManager.Instance.PlayButtonClick();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
