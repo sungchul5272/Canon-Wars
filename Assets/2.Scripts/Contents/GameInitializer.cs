@@ -192,20 +192,9 @@ public class GameInitializer : NetworkBehaviour
         }
     }
 
-    //[ClientRpc]
-    //private void SetPlayerNumberClientRpc(int value)
-    //{
-    //    IngameManager instance = IngameManager.Instance;
-    //    if (instance.playerTurnNumber < 0)
-    //    {
-    //        instance.playerTurnNumber = value;
-    //    }
-    //}
-
     [ServerRpc(RequireOwnership = false)]
     private void SpawnPlayerServerRpc(ulong clientId, eTankType tankType)
     {
-        //_netPlayerNumber.Value++;
         int randIndex = UnityEngine.Random.Range(0, _spawnPosList.Count);
         Vector3 spawnPos = _spawnPosList[randIndex];
         _spawnPosList.RemoveAt(randIndex);
@@ -215,7 +204,6 @@ public class GameInitializer : NetworkBehaviour
         TankDataSO tankData = GetSelectedTankData(tankType);
         GameObject tank = Instantiate(tankData._tankPrefab, spawnPos, Quaternion.identity);
         tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        //SetPlayerNumberClientRpc(_netPlayerNumber.Value);
         Debug.Log($"[GameInitializer] ID: {clientId}, 스폰 위치: {spawnPos}");
 
         PlayerController tankController = tank.GetComponent<PlayerController>();
@@ -263,6 +251,11 @@ public class GameInitializer : NetworkBehaviour
         else
         {
             Debug.Log($"맵 데이터에 사운드가 없습니다");
+        }
+
+        if (!IsServer)
+        {
+            _allDones.Add(true);
         }
 
         SendAllDoneServerRpc();

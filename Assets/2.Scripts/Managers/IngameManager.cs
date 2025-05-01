@@ -42,6 +42,8 @@ public class IngameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+
         _netTurnIndex.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
@@ -63,6 +65,18 @@ public class IngameManager : NetworkBehaviour
         if (IsServer)
         {
             _isGameStarted = false;
+        }
+    }
+
+    void OnClientDisconnected(ulong clientId)
+    {
+        if (clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost)
+            {
+                Debug.Log("Lost connection to host!");
+                // TODO: 연결이 끊겼습니다 UI 띄우기
+            }
         }
     }
 
@@ -153,7 +167,6 @@ public class IngameManager : NetworkBehaviour
         MoveTurn();
     }
 
-
     private void MoveTurn()
     {
         Debug.Log("턴 이동.");
@@ -196,7 +209,7 @@ public class IngameManager : NetworkBehaviour
 
         if (CheckGameEndCondition())
         {
-            Debug.Log("게임 지속");
+            Debug.Log("게임 종료");
             return;
         }
 
@@ -228,7 +241,6 @@ public class IngameManager : NetworkBehaviour
     }
 
     public float GetWindForce() => _netWindForce.Value;
-    //public bool IsCurPlayerTurnWait() => _isTurnWait;
 
     public void PlayerCameraFocusing(PlayerController playerController)
     {
