@@ -12,7 +12,6 @@ public class IngameManager : NetworkBehaviour
 
     [Header("턴 설정")]
     [SerializeField] float _turnTime = 40f;
-    [SerializeField] Text _turnTimerText;
 
     [Header("Environment")]
     [Range(0f, 10f)]
@@ -42,6 +41,8 @@ public class IngameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisConnect;
+
         _netTurnIndex.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
@@ -63,6 +64,14 @@ public class IngameManager : NetworkBehaviour
         if (IsServer)
         {
             _isGameStarted = false;
+        }
+    }
+
+    void OnClientDisConnect(ulong clientId)
+    {
+        if (clientId == NetworkManager.Singleton.LocalClientId && LobbyManager.Instance == null)
+        {
+            LeaveGame();
         }
     }
 
