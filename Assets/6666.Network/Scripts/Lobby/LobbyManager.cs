@@ -172,7 +172,7 @@ public class LobbyManager : MonoBehaviour
         startLobbyUI.gameObject.SetActive(false);
         mainLobbyUI.gameObject.SetActive(true);
         loadingUI.SetActive(true);
-        if (NetworkPlayerData.IsHost)
+        if (NetworkManager.Singleton.IsServer)
         {
             Debug.Log("복귀할 로비 재생성.");
 
@@ -182,8 +182,8 @@ public class LobbyManager : MonoBehaviour
         else
         {
             Debug.Log("복귀할 로비 탐색.");
-            string lobbyId;
-            while (true)
+            string lobbyId = string.Empty;
+            while (NetworkManager.Singleton.IsListening)
             {
                 try
                 {
@@ -429,7 +429,8 @@ public class LobbyManager : MonoBehaviour
             if (lobbyCode == string.Empty)
             {
                 // 공개 로비 참가
-                _joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync((recreateId == string.Empty)? PublicLobbyDatas[index].id : recreateId, new JoinLobbyByIdOptions
+                string lobbyId = (recreateId != string.Empty) ? recreateId : ((index >= 0) ? PublicLobbyDatas[index].id : string.Empty);
+                _joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync(lobbyId, new JoinLobbyByIdOptions
                 {
                     Player = GetPlayer(false),
                 });
@@ -443,8 +444,6 @@ public class LobbyManager : MonoBehaviour
                 });
             }
 
-            EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
-            NetworkPlayerData.SetMaxPlayer(gameMode);
             PublicLobbyDatas.Clear();
             mainLobbyUI.EnterMainLobbyUI(_joinedLobby.Name, _joinedLobby.LobbyCode);
             InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
@@ -677,7 +676,7 @@ public class LobbyManager : MonoBehaviour
             Invoke(nameof(LoadGameScene), _rateLimitTime);
             EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
             string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-            NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, true);
+            NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
             _joinedLobby = null;
         }
         catch (LobbyServiceException ex)
@@ -695,7 +694,7 @@ public class LobbyManager : MonoBehaviour
         CancelInvoke(nameof(RefreshPlayers));
         EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
         string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-        NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, false);
+        NetworkPlayerData.SetGameInfo(gameMode, selectedMapType, selectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
         _joinedLobby = null;
     }
 
