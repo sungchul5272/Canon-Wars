@@ -204,7 +204,6 @@ public class LobbyManager : MonoBehaviour
         mainLobbyUI.gameObject.SetActive(true);
         loadingUI.SetActive(true);
 
-
         if (singleton.IsServer)
         {
             Debug.Log("복귀할 로비 재생성.");
@@ -631,7 +630,9 @@ public class LobbyManager : MonoBehaviour
     public async void ChangeMap(eMapType mapType)
     {
         if (!IsLobbyHost || _joinedLobby == null)
+        {
             return;
+        }
 
         try
         {

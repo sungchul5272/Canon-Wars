@@ -32,7 +32,6 @@ public class GameInitializer : NetworkBehaviour
 
     private NetworkVariable<int> _netMapIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkList<Vector3> _spawnPosList = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    //private NetworkVariable<eTankType> _spawnTankType = new(eTankType.Max, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private Dictionary<ulong, UserData> _clientUserData = new();
     private List<bool> _allDones = new();
 

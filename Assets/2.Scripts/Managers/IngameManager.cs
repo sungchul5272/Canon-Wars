@@ -42,8 +42,6 @@ public class IngameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-
         _netTurnIndex.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
@@ -65,18 +63,6 @@ public class IngameManager : NetworkBehaviour
         if (IsServer)
         {
             _isGameStarted = false;
-        }
-    }
-
-    void OnClientDisconnected(ulong clientId)
-    {
-        if (clientId == NetworkManager.Singleton.LocalClientId)
-        {
-            if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost)
-            {
-                Debug.Log("Lost connection to host!");
-                // TODO: 연결이 끊겼습니다 UI 띄우기
-            }
         }
     }
 
