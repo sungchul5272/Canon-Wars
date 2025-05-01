@@ -57,6 +57,9 @@ public class ShellEllipse : Shell
     [ClientRpc]
     public override void CheckExplosionClientRpc(Vector2 colliderCenter)
     {
+        // 소리
+        PlaySFXMissileExplosionClientRpc();
+
         // 파티클 재생
         CreateExplosionParticle();
 

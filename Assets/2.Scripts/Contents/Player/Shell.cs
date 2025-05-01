@@ -154,7 +154,9 @@ public class Shell : NetworkBehaviour
     [ClientRpc]
     public virtual void CheckExplosionClientRpc(Vector2 colliderCenter)
     {
+        // 家府
         PlaySFXMissileExplosionClientRpc();
+        
         // 颇萍努 积己
         CreateExplosionParticle();
 
@@ -249,13 +251,13 @@ public class Shell : NetworkBehaviour
 
 
     [ClientRpc]
-    void PlaySFXMissileFireClientRpc()
+    protected void PlaySFXMissileFireClientRpc()
     {
         SoundManager.Instance.PlayFire();
     }
 
     [ClientRpc]
-    void PlaySFXMissileExplosionClientRpc()
+    protected void PlaySFXMissileExplosionClientRpc()
     {
         SoundManager.Instance.PlayExplosion();
     }
