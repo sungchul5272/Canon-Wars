@@ -14,7 +14,7 @@ public class CameraShake : MonoBehaviour
 
     private IEnumerator CorShake(float duration, float magnitude)
     {
-        Vector3 originPos = transform.localPosition;
+        Vector3 originPos = transform.position;
         // 흔들림 끝나는 시간
         float endTime= Time.time + duration;
 

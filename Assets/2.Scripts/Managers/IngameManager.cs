@@ -355,11 +355,13 @@ public class IngameManager : NetworkBehaviour
         if (IsServer)
         {
             _netSelectedShellIndex.Value = index; // 서버에서 직접 수정
+            Debug.Log($"[서버] 선택된 포탄 인덱스 값 : {index}");
         }
         else
         {
             // 클라이언트는 ServerRpc를 통해 서버에 값을 전송
             SetSelectedShellIndexServerRpc(index);
+            Debug.Log($"[클라이언트] 선택된 포탄 인덱스 값 : {index}");
         }
     }
 

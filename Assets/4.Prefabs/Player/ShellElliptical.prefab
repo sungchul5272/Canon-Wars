@@ -412,5 +412,7 @@ MonoBehaviour:
   _explosionParticlePrefab: {fileID: 3434388923942782876, guid: 3f6fa4e23e59d834a8191f2f672e72dc, type: 3}
   _durtaion: 7
   _radius: 2.5
+  _createCount: 3
+  _createInterval: 0.3
   _radiusYRatio: 1.5
   _trailRenderer: {fileID: 9145094562357057559}

@@ -19,6 +19,8 @@ public class Shell : NetworkBehaviour
     [SerializeField] private GameObject _explosionParticlePrefab = null;
     [SerializeField] private float _durtaion = 3.5f;        // 객체의 지속시간
     [SerializeField] protected float _radius = 2.5f;
+    [SerializeField] private int _createCount = 1;          // 생성 갯수
+    [SerializeField] private float _createInterval = 0.5f;      // 생성 간격 시간
     
     //[SerializeField] private Sprite _debugConflictPoint;
 
@@ -234,6 +236,17 @@ public class Shell : NetworkBehaviour
 
         camShake.Shake(_shakeDurtaion, _shakeMagnitude);
     }
+
+    public int GetCreateCount()
+    {
+        return _createCount;
+    }
+
+    public float GetCreateInterval()
+    {
+        return _createInterval;
+    }
+
 
     [ClientRpc]
     void PlaySFXMissileFireClientRpc()

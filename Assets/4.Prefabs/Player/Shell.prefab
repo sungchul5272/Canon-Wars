@@ -264,6 +264,8 @@ MonoBehaviour:
   _explosionParticlePrefab: {fileID: 3434388923942782876, guid: e9440a633c70223458a0020a97c7e84b, type: 3}
   _durtaion: 7
   _radius: 2.5
+  _createCount: 1
+  _createInterval: 0
 --- !u!1001 &5722847160805231265
 PrefabInstance:
   m_ObjectHideFlags: 0

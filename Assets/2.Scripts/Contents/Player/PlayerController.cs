@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Collections;
@@ -68,6 +69,8 @@ public class PlayerController : NetworkBehaviour
     private bool _bAfterDeadEvent = false;       // 죽음 이후 이벤트 한번만 실행하기 위한 bool
     private bool _isCanFire = false;
     private bool _isMoving = false;
+
+    private Coroutine _corGenerateShell = null;
 
     private NetworkObject _curSpawnedShell;
     public NetworkVariable<int> _hp = new(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -230,7 +233,11 @@ public class PlayerController : NetworkBehaviour
             IngameManager.Instance.SetSelectedShellIndex(_curShellIndex);
 
             // 포탄 생성
-            GenerationShellServerRpc(_curShellPower);
+            if (_corGenerateShell != null)
+                StopCoroutine(_corGenerateShell);
+
+            _corGenerateShell = StartCoroutine(CorGenerateShell());
+            //GenerationShellServerRpc(_curShellPower);
 
             // 이전 파워 값 저장
             _prevShellPower = _curShellPower;
@@ -328,27 +335,32 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
+    private IEnumerator CorGenerateShell()
+    {
+        // 정보용
+        Shell shell = _shellList[_curShellIndex].GetComponent<Shell>();
+
+        int createCount = shell.GetCreateCount();
+        float createInterval = shell.GetCreateInterval();
+
+        for(int i =0; i < createCount; i++)
+        {
+            GenerationShellServerRpc(_curShellPower);
+
+            yield return new WaitForSeconds(createInterval);
+        }
+    }
+
     [ServerRpc(RequireOwnership = false)]
     private void GenerationShellServerRpc(float shellPower)
     {
-        //_curSpawnedShell = PoolManager.Instance.Pop(_curShell).GetComponent<NetworkObject>();
-        //if (!_curSpawnedShell.IsSpawned)
-        //{
-        //    _curSpawnedShell.Spawn();
-        //}
-
         if (!IsServer)
         {
             return;
         }
-
-        Debug.Log($"서버 포탄 파워: {shellPower}.");
-
-        // 포탄 풀링
-        //_curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_curShell.GetComponent<NetworkObject>());
-
+        // 인덱스 가져오기
         int selectedShellIndex = IngameManager.Instance.GetSelectShellIndex();
-        Debug.Log($"선택된 포탄 인덱스 : {selectedShellIndex}.");
+        // 포탄 풀링
         _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_shellList[selectedShellIndex].GetComponent<NetworkObject>());
         // 포탄 위치와 회전
         GameObject shellGameObj = _curSpawnedShell.gameObject;
@@ -663,7 +675,6 @@ public class PlayerController : NetworkBehaviour
         _shellList = SODataManager.instance.GetTankData(type)._shellList;
 
         // Default
-        //_curShell = _shellList[0];
         _curShellIndex = 0;
     }
 
