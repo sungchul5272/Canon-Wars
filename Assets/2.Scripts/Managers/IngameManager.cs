@@ -41,6 +41,8 @@ public class IngameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisConnect;
+
         _netTurnIndex.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
@@ -62,6 +64,14 @@ public class IngameManager : NetworkBehaviour
         if (IsServer)
         {
             _isGameStarted = false;
+        }
+    }
+
+    void OnClientDisConnect(ulong clientId)
+    {
+        if (clientId == NetworkManager.Singleton.LocalClientId && LobbyManager.Instance == null)
+        {
+            LeaveGame();
         }
     }
 
