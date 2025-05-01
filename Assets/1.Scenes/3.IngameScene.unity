@@ -581,7 +581,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3703855893
+  GlobalObjectIdHash: 931926751
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -992,12 +992,6 @@ MonoBehaviour:
   _myWinRateText: {fileID: 971167010}
   _enemyWinRateText: {fileID: 1709304036}
   _mapBackgroundImage: {fileID: 1855695824}
-  _mapBackgroundSprites:
-  - {fileID: 21300000, guid: 246b02cdb7cad2f4c80e6b2ea71599ad, type: 3}
-  - {fileID: 2712053971802975647, guid: 03c638db8c421c24b8ce41e3fe0b219d, type: 3}
-  - {fileID: -8452540829195008579, guid: 57e37c06054663a459e9c28e4aba165e, type: 3}
-  - {fileID: -2918416809153958904, guid: 49ab562d0c464844b80588e68e34cbaf, type: 3}
-  - {fileID: -8190390459445649128, guid: 47dcdfa9281caaa48a102b01df9e836f, type: 3}
   _mapSpawner: {fileID: 413969504}
   _ingameUI: {fileID: 642844112}
 --- !u!4 &413969506
@@ -1027,7 +1021,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 903064596
+  GlobalObjectIdHash: 4267311037
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1553,7 +1547,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &642844108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2405,7 +2399,7 @@ RectTransform:
   m_Father: {fileID: 678984124}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3826,7 +3820,7 @@ RectTransform:
   m_Father: {fileID: 508827719}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}

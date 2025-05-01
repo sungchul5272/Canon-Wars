@@ -14,7 +14,6 @@ public class SoundManager : MonoBehaviour
     [Header("BGM Clips")]
     [SerializeField] private AudioClip _startSceneBGM;
     [SerializeField] private AudioClip _lobbySceneBGM;
-    [SerializeField] private AudioClip[] _ingameBGMs;
 
     [Header("SFX Clips")]
     [SerializeField] private AudioClip _buttonClickClip;
@@ -61,21 +60,13 @@ public class SoundManager : MonoBehaviour
         PlayBGM(_lobbySceneBGM);
     }
 
-    public void PlayIngameBGM(int mapIndex)
+    public void PlayBGM(AudioClip clip)
     {
-        if (_ingameBGMs != null && mapIndex >= 0 && mapIndex < _ingameBGMs.Length)
+        if (clip == null)
         {
-            PlayBGM(_ingameBGMs[mapIndex]);
+            Debug.LogWarning("[SoundManager] 재생할 BGM이 없습니다.");
+            return;
         }
-        else
-        {
-            Debug.LogWarning("[SoundManager] 잘못된 맵 인덱스입니다.");
-        }
-    }
-
-    private void PlayBGM(AudioClip clip)
-    {
-        if (clip == null) return;
 
         _bgmSource.clip = clip;
         _bgmSource.loop = true;

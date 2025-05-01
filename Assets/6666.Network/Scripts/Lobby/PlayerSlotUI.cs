@@ -25,6 +25,7 @@ public class PlayerSlotUI : MonoBehaviour
         profileButton.onClick.RemoveAllListeners();
         profileButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             instance.mainLobbyUI.HideOtherKickButtonsUI(index);
             kickButton.gameObject.SetActive(!kickButton.gameObject.activeSelf);
             kickButton.interactable = instance.IsLobbyHost && !instance.IsPlayer(index);
@@ -34,6 +35,7 @@ public class PlayerSlotUI : MonoBehaviour
         kickButton.onClick.RemoveAllListeners();
         kickButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             instance.KickPlayer(index);
             HideKickButtonUI();
         });

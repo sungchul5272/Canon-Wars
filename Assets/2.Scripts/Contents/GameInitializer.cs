@@ -20,7 +20,7 @@ public class GameInitializer : NetworkBehaviour
     [SerializeField]  Text _myWinRateText;
     [SerializeField] Text _enemyWinRateText;
     [SerializeField]  Image _mapBackgroundImage;
-    [SerializeField]  List<Sprite> _mapBackgroundSprites;
+
 
     [Header("맵 스포너")]
     [SerializeField] private MapSpawner _mapSpawner;
@@ -167,18 +167,25 @@ public class GameInitializer : NetworkBehaviour
 
     private void UpdateLoadingMapBackground(int mapIndex)
     {
-        if (_mapBackgroundSprites == null || _mapBackgroundSprites.Count == 0)
-            return;
+        MapData mapData = SODataManager.instance.GetMapData((eMapType)mapIndex);
 
-        if (mapIndex >= 0 && mapIndex < _mapBackgroundSprites.Count)
+        if (mapData != null && mapData.backgroundPrefab != null)
         {
-            _mapBackgroundImage.sprite = _mapBackgroundSprites[mapIndex];
-            _mapBackgroundImage.color = Color.white;
-            Debug.Log($"[GameInitializer] 로딩창 배경 변경 완료: {((eMapType)mapIndex).ToString()}");
+            SpriteRenderer sr = mapData.backgroundPrefab.GetComponentInChildren<SpriteRenderer>();
+
+            if (sr != null)
+            {
+                _mapBackgroundImage.sprite = sr.sprite;
+                _mapBackgroundImage.color = Color.white;
+            }
+            else
+            {
+                Debug.Log($"BackgroundPrefab 의 SpriteRenderer 누락");
+            }
         }
         else
         {
-            Debug.LogWarning("[GameInitializer] 잘못된 맵 인덱스입니다.");
+            Debug.Log($"맵 인덱스 오류");
         }
     }
 
@@ -243,17 +250,21 @@ public class GameInitializer : NetworkBehaviour
         _ingameUI.gameObject.SetActive(true);
 
         int mapIndex = _netMapIndex.Value;
-        SoundManager.Instance.PlayIngameBGM(mapIndex);
 
-        Debug.Log("[GameInitializer] 초기화 완료! UI 전환");
-
-        if (!IsServer)
+        var mapData = SODataManager.instance.GetMapData((eMapType)mapIndex);
+        if (mapData != null && mapData.sound != null)
         {
-            _allDones.Add(true);
+            SoundManager.Instance.PlayBGM(mapData.sound);
+            Debug.Log($"BGM : {mapData}");
+        }
+        else
+        {
+            Debug.Log($"맵 데이터에 사운드가 없습니다");
         }
 
         SendAllDoneServerRpc();
     }
+
 
     [ServerRpc(RequireOwnership = false)]
     private void SendAllDoneServerRpc()
