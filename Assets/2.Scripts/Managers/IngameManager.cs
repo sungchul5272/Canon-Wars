@@ -12,7 +12,6 @@ public class IngameManager : NetworkBehaviour
 
     [Header("≈œ º≥¡§")]
     [SerializeField] float _turnTime = 40f;
-    [SerializeField] Text _turnTimerText;
 
     [Header("Environment")]
     [Range(0f, 10f)]
