@@ -133,11 +133,14 @@ public class GameInitializer : NetworkBehaviour
             {
                 if (!singleton.IsListening)
                 {
+                    Debug.LogWarning("네트워크 연결이 끊겼습니다.");
                     break;
                 }
 
                 yield return null;
             }
+
+            Debug.Log("준비 완료.");
 
             if (!singleton.IsListening)
             {
