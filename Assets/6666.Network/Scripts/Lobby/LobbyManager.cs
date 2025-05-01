@@ -60,6 +60,7 @@ public class LobbyManager : MonoBehaviour
     readonly string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 대문자 알파벳과 숫자
 
     string _playerName;
+    string _playerNickName;
     string _gameSceneName = "3.IngameScene";
     string _playerNameDataKey = "PlayerName";
     string _playerReadyDataKey = "PlayerReady";
@@ -88,6 +89,7 @@ public class LobbyManager : MonoBehaviour
         if (FirebaseManager._instance != null)
         {
             _playerName = FirebaseManager._instance.userVO.UserID;
+            _playerNickName = FirebaseManager._instance.userVO.NickName;
         }
         else
         {
@@ -874,7 +876,7 @@ public class LobbyManager : MonoBehaviour
             Data = new Dictionary<string, PlayerDataObject>
             {
                 // 로비 멤버에게만 플레이어 이름 공개
-                { _playerNameDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, _playerName) },
+                { _playerNameDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, _playerNickName) },
 
                 // 로비 멤버에게만 준비 상태 공개
                 { _playerReadyDataKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, isHost? "1" : "0") },

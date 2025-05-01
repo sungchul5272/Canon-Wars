@@ -117,6 +117,7 @@ public class MainLobbyUI : MonoBehaviour
         backButton.onClick.RemoveAllListeners();
         backButton.onClick.AddListener(() =>
         {
+            SoundManager.Instance.PlayButtonClick();
             LobbyManager.Instance.LeaveLobby();
         });
     }
@@ -150,6 +151,7 @@ public class MainLobbyUI : MonoBehaviour
 
     void OnClick_MapLeft()
     {
+        SoundManager.Instance.PlayButtonClick();
         LobbyManager instance = LobbyManager.Instance;
 
         // ¸Ê
@@ -177,6 +179,7 @@ public class MainLobbyUI : MonoBehaviour
 
     void OnClick_MapRight()
     {
+        SoundManager.Instance.PlayButtonClick();
         LobbyManager instance = LobbyManager.Instance;
 
         // ¸Ê
