@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class DemoGameUI : MonoBehaviour
 {
     public Button leaveButton;
-    public Button endButton;
+    //public Button endButton;
 
     void Start()
     {
@@ -15,9 +15,9 @@ public class DemoGameUI : MonoBehaviour
             IngameManager.Instance.LeaveGame();
         });
 
-        endButton.onClick.AddListener(() =>
-        {
-            IngameManager.Instance.BackToLobby();
-        });
+        //endButton.onClick.AddListener(() =>
+        //{
+        //    IngameManager.Instance.BackToLobby();
+        //});
     }
 }

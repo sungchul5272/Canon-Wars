@@ -10,9 +10,14 @@ public class DotSpinner : MonoBehaviour
 
     private int currentIndex = 0;
 
-    void Start()
+    void OnEnable()
     {
         InvokeRepeating(nameof(AnimateDots), 0f, interval);
+    }
+
+    void OnDisable()
+    {
+        CancelInvoke(nameof(AnimateDots));
     }
 
     void AnimateDots()

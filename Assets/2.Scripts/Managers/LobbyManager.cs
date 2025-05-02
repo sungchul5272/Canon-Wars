@@ -69,7 +69,7 @@ public class LobbyManager : MonoBehaviour
     float _maintainLobbyTime = 20;
     float _rateLimitTime = 1.1f;
     float _gameStartTimeout = 10;
-    bool _isGameStart;
+    float _backToLobbyTimeout = 10;
 
     void Awake()
     {
@@ -83,22 +83,13 @@ public class LobbyManager : MonoBehaviour
         createLobbyUI.Init();
         sortLobbyUI.Init();
         mainLobbyUI.Init();
+        _joinedLobby = null;
 
         SoundManager.Instance.PlayLobbySceneBGM();
 
-        _joinedLobby = null;
-        _isGameStart = false;
-
         // 플레이어 아이디 부여
-        if (FirebaseManager._instance != null)
-        {
-            _playerName = FirebaseManager._instance.userVO.UserID;
-            _playerNickName = FirebaseManager._instance.userVO.NickName;
-        }
-        else
-        {
-            Debug.LogError("FirebaseManager가 없습니다.");
-        }
+        _playerName = FirebaseManager._instance.userVO.UserID;
+        _playerNickName = FirebaseManager._instance.userVO.NickName;
 
         // 유니티 서비스 로그인
         LogInUnityService();
@@ -153,7 +144,7 @@ public class LobbyManager : MonoBehaviour
             // 이미 로그인 된 경우 경기가 끝나고 돌아온 것으로 간주
             if (AuthenticationService.Instance.IsSignedIn)
             {
-                if (NetworkManager.Singleton.IsListening)
+                if (NetworkPlayerData.InternalLobbyCode != string.Empty)//NetworkManager.Singleton.IsListening)
                 {
                     Debug.Log("로비로 복귀합니다.");
                     SetSceneToMainLobby();
@@ -183,8 +174,8 @@ public class LobbyManager : MonoBehaviour
 
     async void SetSceneToMainLobby()
     {
-        NetworkManager singleton = NetworkManager.Singleton;
-        if (singleton.ConnectedClients.Count != NetworkPlayerData.GetMaxPlayer())
+        // 게임 시작 실패 후 복귀한 경우
+        if (NetworkPlayerData.IsGameAborted)
         {
             mainLobbyUI.ShowConnectionFailedUI();
         }
@@ -195,7 +186,7 @@ public class LobbyManager : MonoBehaviour
         mainLobbyUI.gameObject.SetActive(true);
         loadingUI.SetActive(true);
 
-        if (singleton.IsServer)
+        if (NetworkPlayerData.IsHost)
         {
             Debug.Log("복귀할 로비 재생성.");
 
@@ -206,7 +197,9 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log("복귀할 로비 탐색.");
             string lobbyId = string.Empty;
-            while (singleton.IsListening)
+            System.Diagnostics.Stopwatch stopwatch = new();
+            stopwatch.Start();
+            while (true)
             {
                 try
                 {
@@ -231,6 +224,15 @@ public class LobbyManager : MonoBehaviour
                         Debug.LogError("이전 로비가 남아있습니다.");
                     }
 
+                    // 타임아웃 검사
+                    if (stopwatch.Elapsed.TotalSeconds > _backToLobbyTimeout)
+                    {
+                        Debug.Log("로비 복귀 타임아웃");
+                        ShowJoinFailed();
+                        break;
+                    }
+
+                    Debug.Log("로비 탐색 재요청 대기.");
                     await Task.Delay((int)(_rateLimitTime * 1000)); // 요청 대기
                 }
                 catch (LobbyServiceException ex)
@@ -243,13 +245,14 @@ public class LobbyManager : MonoBehaviour
                     {
                         Debug.LogError(ex.Message);
                     }
-
-                    ShowJoinFailed();
                 }
             }
 
-            Debug.Log("복귀할 로비 참가.");
-            JoinLobby(string.Empty, -1, lobbyId);
+            if (lobbyId != string.Empty)
+            {
+                Debug.Log($"복귀할 로비 참가: {lobbyId}");
+                JoinLobby(string.Empty, -1, lobbyId);
+            }
         }
     }
 
@@ -366,41 +369,19 @@ public class LobbyManager : MonoBehaviour
                 }
             });
 
+            PublicLobbyDatas.Clear();
             mainLobbyUI.EnterMainLobbyUI(lobbyName, _joinedLobby.LobbyCode);
             ReadyPlayer(true);
             InvokeRepeating(nameof(MaintainLobby), _maintainLobbyTime, _maintainLobbyTime);
             InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
             Debug.Log($"생성된 로비: {lobbyName}, 코드: {_joinedLobby.LobbyCode}, 내부 코드: {_joinedLobby.Data[_internalLobbyCodeDataKey].Value}.");
 
-            // 자동으로 기존 네트워크 연결 종료
-            if (_autoNetworkShutdown == null)
-            {
-                _autoNetworkShutdown = StartCoroutine(AutoNetworkShutdown());
-            }
+            // 이전 로비 정보는 삭제
+            NetworkPlayerData.RemoveGameInfo();
         }
         catch (LobbyServiceException ex)
         {
             Debug.LogError(ex.Message);
-        }
-    }
-
-    IEnumerator AutoNetworkShutdown()
-    {
-        NetworkManager singletone = NetworkManager.Singleton;
-        while (singletone.IsListening)
-        {
-            if (_joinedLobby.Players.Count >= singletone.ConnectedClients.Count)
-            {
-                break;
-            }
-
-            yield return null;
-        }
-
-        if (singletone.IsListening)
-        {
-            Debug.Log("자동 네트워크 종료.");
-            singletone.Shutdown();
         }
     }
 
@@ -472,7 +453,7 @@ public class LobbyManager : MonoBehaviour
             if (lobbyCode == string.Empty)
             {
                 // 공개 로비 참가
-                string lobbyId = (recreateId != string.Empty) ? recreateId : ((index >= 0) ? PublicLobbyDatas[index].id : string.Empty);
+                string lobbyId = (recreateId != string.Empty) ? recreateId : ((index >= 0) ? PublicLobbyDatas[index].id : "0");
                 _joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync(lobbyId, new JoinLobbyByIdOptions
                 {
                     Player = GetPlayer(false),
@@ -491,6 +472,9 @@ public class LobbyManager : MonoBehaviour
             mainLobbyUI.EnterMainLobbyUI(_joinedLobby.Name, _joinedLobby.LobbyCode);
             InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
             Debug.Log($"참가한 로비: {_joinedLobby.Name}, 코드: {_joinedLobby.LobbyCode}, 내부 코드: {_joinedLobby.Data[_internalLobbyCodeDataKey].Value}.");
+
+            // 이전 로비 정보는 삭제
+            NetworkPlayerData.RemoveGameInfo();
         }
         catch (LobbyServiceException ex)
         {
@@ -663,47 +647,14 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    private async Task ManualNetworkShutdown()
-    {
-        try
-        {
-            NetworkManager singleton = NetworkManager.Singleton;
-
-            // 자동 네트워크 종료 취소
-            if (_autoNetworkShutdown != null)
-            {
-                StopCoroutine(_autoNetworkShutdown);
-                _autoNetworkShutdown = null;
-            }
-
-            // 연결된 네트워크가 있거나 아직 종료 중이면
-            if (singleton.IsListening || singleton.ShutdownInProgress)
-            {
-                // 종료 반복 호출 가능
-                singleton.Shutdown();
-
-                // 종료될 때까지 대기
-                while (singleton.ShutdownInProgress || singleton.IsListening)
-                {
-                    await Task.Yield(); // 다음 프레임까지 대기
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Network error: {ex.Message}");
-        }
-    }
-
     public async void StartGameAsHost()
     {
         // 호스트로 게임 시작
         try
         {
-            await ManualNetworkShutdown();
-
-            _isGameStart = true;
+            CancelInvoke(nameof(RefreshPlayers));
             loadingUI.SetActive(true);
+
             string relayCode = await CreateRelay();
             _joinedLobby = await Lobbies.Instance.UpdateLobbyAsync(_joinedLobby.Id, new UpdateLobbyOptions
             {
@@ -716,11 +667,10 @@ public class LobbyManager : MonoBehaviour
             });
 
             CancelInvoke(nameof(MaintainLobby));
-            CancelInvoke(nameof(RefreshPlayers));
             Invoke(nameof(LoadGameScene), _rateLimitTime);
             EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
             string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-            NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
+            NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, true);
             _joinedLobby = null;
         }
         catch (LobbyServiceException ex)
@@ -806,8 +756,8 @@ public class LobbyManager : MonoBehaviour
         bool gameReady = true;
         for (int i = 0; i < _joinedLobby.Players.Count; i++)
         {
-            // 이름과 준비 상태 갱신
-            bool playerReady = _joinedLobby.Players[i].Data[_playerReadyDataKey].Value.Equals("1");
+            // 이름과 준비 상태 갱신 (호스트는 자동 레디)
+            bool playerReady = (i == 0) || _joinedLobby.Players[i].Data[_playerReadyDataKey].Value.Equals("1");
 
             // 선택한 탱크 보여주기
             eTankType selectedTank = (eTankType)System.Enum.Parse(typeof(eTankType) ,_joinedLobby.Players[i].Data[_playerSelectTankDataKey].Value);
@@ -831,6 +781,7 @@ public class LobbyManager : MonoBehaviour
         }
 
         // 호스트가 아닐 경우
+        bool isGameStarted = false;
         if (!IsLobbyHost)
         {
             //게임이 시작되었는지 확인
@@ -838,11 +789,15 @@ public class LobbyManager : MonoBehaviour
             if (!joinCode.Equals("0"))
             {
                 StartGameAsClient(joinCode);
+                isGameStarted = true;
             }
         }
 
         mainLobbyUI.RefreshPlayersUI(playerIndex, gameReady);
-        loadingUI.SetActive(_isGameStart);
+        if (!isGameStarted)
+        {
+            loadingUI.SetActive(false);
+        }
     }
 
     public bool IsPlayer(int index)
@@ -854,13 +809,12 @@ public class LobbyManager : MonoBehaviour
     void StartGameAsClient(string joinCode)
     {
         // 클라이언트로 게임 시작
-        _isGameStart = true;
+        CancelInvoke(nameof(RefreshPlayers));
         loadingUI.SetActive(true);
         JoinRelay(joinCode);
-        CancelInvoke(nameof(RefreshPlayers));
         EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
         string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-        NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
+        NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, false);
         _joinedLobby = null;
     }
 
@@ -886,18 +840,22 @@ public class LobbyManager : MonoBehaviour
     IEnumerator CheckConnectionAsync()
     {
         float timer = 0;
-        while (timer < _gameStartTimeout)
+        while (true)
         {
+            if (timer > _gameStartTimeout)
+            {
+                // 연결이 끊어진 경우
+                Debug.Log("게임 씬으로 넘어가기 전 타임아웃 되었습니다.");
+                NetworkManager.Singleton.Shutdown();
+                mainLobbyUI.ShowConnectionFailedUI();
+                mainLobbyUI.LeaveMainLobbyUI();
+                loadingUI.SetActive(false);
+                break;
+            }
+
             timer += Time.deltaTime;
             yield return null;
         }
-
-        // 연결이 끊어진 경우
-        Debug.Log("게임 씬으로 넘어가기 전 타임아웃 되었습니다.");
-        NetworkManager.Singleton.Shutdown();
-        loadingUI.SetActive(false);
-        mainLobbyUI.ShowConnectionFailedUI();
-        mainLobbyUI.LeaveMainLobbyUI();
     }
 
     void LoadGameScene()

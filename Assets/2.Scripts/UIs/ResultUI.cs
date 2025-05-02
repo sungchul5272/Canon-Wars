@@ -2,44 +2,40 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Unity.Netcode;
+using System.Collections;
 
 public class ResultUI : MonoBehaviour
 {
-    public static ResultUI Instance { get; private set; }
-
     [SerializeField] Text _resultText;
+    [SerializeField] Text _waitText;
+    [SerializeField] Text _failText;
     [SerializeField] Button _backToMainBtn;
     [SerializeField] Button _backToRoomBtn;
     [SerializeField] Button _waitCancleBtn;
-    [SerializeField] GameObject _resultUI;
-    [SerializeField] GameObject _waitingUI;
+    [SerializeField] GameObject _statusUI;
+    [SerializeField] GameObject _connectWaitingUI;
+    [SerializeField] GameObject _spinnerIcon;
+    [SerializeField] GameObject _failIcon;
 
-    private void Awake()
+    Coroutine _waitHostCoroutine;
+
+    string _lobbySceneName = "2.LobbyScene";
+    float _waitHostTimeout = 30;
+
+    void Awake()
     {
         Debug.Log("[ResultUI] Awake 호출됨");
 
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-        _backToMainBtn.onClick.RemoveAllListeners();
         _backToMainBtn.onClick.AddListener(OnClickBackToMainButton);
-        _backToRoomBtn.onClick.RemoveAllListeners();
         _backToRoomBtn.onClick.AddListener(OnClickBackToRoomButton);
-        _waitCancleBtn.onClick.RemoveAllListeners();
         _waitCancleBtn.onClick.AddListener(OnClickWaitCancleButton);
-
     }
 
     public void ShowResult(string resultType)
     {
         Debug.Log($"[ResultUI] ShowResult 호출됨: {resultType}");
 
-        _resultUI.SetActive(true);
+        _statusUI.SetActive(true);
 
         switch (resultType)
         {
@@ -58,29 +54,69 @@ public class ResultUI : MonoBehaviour
         }
     }
 
-    private void OnClickBackToMainButton()
+    void OnClickBackToMainButton()
     {
+        // 떠나기
         IngameManager.Instance.LeaveGame();
     }
 
-    private void OnClickBackToRoomButton()
+    void OnClickBackToRoomButton()
     {
-
-        //if(만약 호스트가 아닌 클라이언트라면)
-        //{
-        //    _waitingUI.SetActive(true);
-        //    멀티서버에 연결을 대기하는 기능 추가 필요
-        //}
-
-        if(NetworkManager.Singleton.IsServer)
+        NetworkManager singleton = NetworkManager.Singleton;
+        if (singleton.IsServer)
         {
-            IngameManager.Instance.BackToLobby();
+            // 호스트는 바로 복귀 가능
+            IngameManager.Instance.HostBackToLobbyClientRpc();
+        }
+        else
+        {
+            _connectWaitingUI.SetActive(true);
+            SetWaitingState(true);
+
+            // 클라이언트는 호스트가 복귀를 누를 떄까지 대기
+            _waitHostCoroutine = StartCoroutine(WaitHostAsync());
+        }
+    }
+
+    void SetWaitingState(bool waiting)
+    {
+        _waitText.gameObject.SetActive(waiting);
+        _spinnerIcon.gameObject.SetActive(waiting);
+        _failText.gameObject.SetActive(!waiting);
+        _failIcon.gameObject.SetActive(!waiting);
+    }
+
+    IEnumerator WaitHostAsync()
+    {
+        float timer = 0;
+        while (!IngameManager.Instance.HostBackToLobby)
+        {
+            if (timer > _waitHostTimeout)
+            {
+                SetWaitingState(false);
+                yield break;
+            }
+
+            timer += Time.deltaTime;
+            yield return null;
         }
 
+        NetworkManager.Singleton.Shutdown();
+
+        // 본인만 로비 씬 로드
+        SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
     }
-    private void OnClickWaitCancleButton()
+
+    void OnClickWaitCancleButton()
     {
-        _waitingUI.SetActive(false);
-        // 연결시도 해제하는 기능 추가 필요
+        _connectWaitingUI.SetActive(false);
+
+        // 로비 복귀 대기 취소
+        if (_waitHostCoroutine != null)
+        {
+            StopCoroutine(_waitHostCoroutine);
+            _waitHostCoroutine = null;
+            Debug.Log("로비 복귀 대기 취소.");
+        }
     }
 }

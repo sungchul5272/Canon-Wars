@@ -1,6 +1,5 @@
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,13 +14,17 @@ public class IngameManager : NetworkBehaviour
 
     [Header("Environment")]
     [Range(0f, 10f)]
-    [SerializeField] private float _windForceMax = 0f;
+    [SerializeField] float _windForceMax = 0f;
+
+    [Header("Result")]
+    [SerializeField] ResultUI _resultUI;
 
     public Transform CurShellTrans { get; set; }
 
-    public int playerTurnNumber = -1;
+    public int PlayerTurnNumber { get; set; } = -1;
+    public bool HostBackToLobby { get; private set; } = false;
 
-    private const float TURN_END_TERM = 3f;
+    const float TURN_END_TERM = 3f;
 
     NetworkVariable<float> _netWindForce = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     NetworkVariable<float> _netTurnTimer = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -32,11 +35,27 @@ public class IngameManager : NetworkBehaviour
     bool _isGameStarted = false;
     bool _isTurnWait = false;
     bool _alreadySavedBattleInfo = false;
+    bool _isGameEnded = false;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+    }
+
+    void Update()
+    {
+        if (!IsServer || !_isGameStarted || _isTurnWait)
+        {
+            return;
+        }
+
+        _netTurnTimer.Value -= Time.deltaTime;
+
+        if (_netTurnTimer.Value <= 0f)
+        {
+            PlayerTurnEndServerRpc();
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -78,15 +97,19 @@ public class IngameManager : NetworkBehaviour
 
     void OnClientDisConnect(ulong clientId)
     {
-        if (clientId == NetworkManager.Singleton.LocalClientId)
+        if (!_isGameEnded)
         {
-            // 네트워크가 끊기면 메인화면으로
-            LeaveGame();
-        }
-        else
-        {
-            // 호스트는 로비로 복귀
-            BackToLobby();
+            if (clientId == NetworkManager.Singleton.LocalClientId)
+            {
+                // 네트워크가 끊기면 메인화면으로
+                LeaveGame();
+            }
+            else
+            {
+                // 남은 클라이언트(호스트)는 로비로 복귀
+                NetworkPlayerData.GameAborted();
+                BackToLobby();
+            }
         }
     }
 
@@ -101,6 +124,8 @@ public class IngameManager : NetworkBehaviour
     {
         Debug.Log("Leave game and back to lobby.");
 
+        NetworkPlayerData.RemoveGameInfo();
+
         // 연결 해제
         NetworkManager.Singleton.Shutdown();
 
@@ -114,35 +139,15 @@ public class IngameManager : NetworkBehaviour
 
         if (NetworkManager.Singleton.IsListening)
         {
-            // 지금은 호스트만 가능
-            if (!NetworkManager.Singleton.IsServer)
+            if (IsServer)
             {
-                Debug.LogWarning("Only host can end game.");
-                return;
+                // 네트워크가 살아있으면 호스트가 모두에게 로비 씬 로드
+                NetworkManager.Singleton.SceneManager.LoadScene(_lobbySceneName, LoadSceneMode.Single);
             }
-
-            // 로비 씬 로드
-            NetworkManager.Singleton.SceneManager.LoadScene(_lobbySceneName, LoadSceneMode.Single);
         }
         else
         {
-            // 연결이 끊긴 경우 본인만 로비 씬 로드
-            SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
-        }
-    }
-
-    void Update()
-    {
-        if (!IsServer || !_isGameStarted || _isTurnWait)
-        {
-            return;
-        }
-
-        _netTurnTimer.Value -= Time.deltaTime;
-
-        if (_netTurnTimer.Value <= 0f)
-        {
-            PlayerTurnEndServerRpc();
+            LeaveGame();
         }
     }
 
@@ -236,8 +241,8 @@ public class IngameManager : NetworkBehaviour
             if (isTurn)
             {
                 PlayerCameraFocusing(player);
-                bool isMyTurn = turnIndex == playerTurnNumber;
-                Debug.Log($"현재 턴: {turnIndex}, 나의 턴: {playerTurnNumber}.");
+                bool isMyTurn = turnIndex == PlayerTurnNumber;
+                Debug.Log($"현재 턴: {turnIndex}, 나의 턴: {PlayerTurnNumber}.");
                 if (isMyTurn)
                 {
                     Debug.Log($"나의 턴.");
@@ -259,7 +264,7 @@ public class IngameManager : NetworkBehaviour
 
     public bool IsMyTurn()
     {
-        return _netTurnIndex.Value == playerTurnNumber;
+        return _netTurnIndex.Value == PlayerTurnNumber;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -295,7 +300,7 @@ public class IngameManager : NetworkBehaviour
                 alivePlayers.Add(obj);
             }
         }
-
+       
         Debug.Log($"[게임 상태] 생존한 플레이어 수: {alivePlayers.Count}");
 
         if (alivePlayers.Count <= 1)
@@ -326,10 +331,9 @@ public class IngameManager : NetworkBehaviour
         _ = HandleGameEndResultAsync(winnerId);
     }
 
-    private async Task HandleGameEndResultAsync(ulong winnerId)
+    async Task HandleGameEndResultAsync(ulong winnerId)
     {
-        string resultKey = "";
-
+        string resultKey;
         if (winnerId == ulong.MaxValue)
         {
             FirebaseManager._instance.addBattleInnfo("무");
@@ -350,15 +354,12 @@ public class IngameManager : NetworkBehaviour
         }
 
         bool uploadSuccess = await FirebaseManager._instance.Update_UserBattleInfoAsync();
-
         if (uploadSuccess)
         {
             Debug.Log("Firebase 저장 완료");
 
-            if (ResultUI.Instance != null)
-            {
-                ResultUI.Instance.ShowResult(resultKey);
-            }
+            _resultUI.ShowResult(resultKey);
+            _isGameEnded = true;
         }
         else
         {
@@ -389,13 +390,29 @@ public class IngameManager : NetworkBehaviour
 
     // 서버에서 클라이언트의 요청을 받아 포탄 인덱스를 설정
     [ServerRpc(RequireOwnership = false)]
-    private void SetSelectedShellIndexServerRpc(int index)
+    void SetSelectedShellIndexServerRpc(int index)
     {
         _netSelectedShellIndex.Value = index;
     }
+
     public int GetSelectShellIndex()
     {
         return _netSelectedShellIndex.Value;
+    }
+
+    [ClientRpc]
+    public void HostBackToLobbyClientRpc()
+    {
+        // 호스트 로비 복귀 알림
+        HostBackToLobby = true;
+
+        if (IsServer)
+        {
+            NetworkManager.Singleton.Shutdown();
+
+            // 본인만 로비 씬 로드
+            SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
+        }
     }
 }
 

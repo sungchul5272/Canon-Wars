@@ -123,27 +123,6 @@ public class GameInitializer : NetworkBehaviour
             IngameManager.Instance.SetStartTurnIndex();
             IngameManager.Instance.StartGame();
         }
-        else
-        {
-            while (_allDones.Count <= 0)
-            {
-                if (!singleton.IsListening)
-                {
-                    Debug.LogWarning("네트워크 연결이 끊겼습니다.");
-                    break;
-                }
-
-                yield return null;
-            }
-
-            Debug.Log("준비 완료.");
-
-            if (!singleton.IsListening)
-            {
-                Debug.LogWarning("네트워크 연결이 해제되어 로비로 돌아갑니다.");
-                IngameManager.Instance.BackToLobby();
-            }
-        }
     }
 
     IEnumerator WaitAllClientsAsync()
@@ -223,7 +202,7 @@ public class GameInitializer : NetworkBehaviour
     private void StartGameClientRpc(int turnNumber, ClientRpcParams clientRpcParams = default)
     {
         // 클라이언트가 자신의 턴 넘버를 저장
-        IngameManager.Instance.playerTurnNumber = turnNumber;
+        IngameManager.Instance.PlayerTurnNumber = turnNumber;
         Debug.Log($"My turn number: {turnNumber}");
 
         _loadingUI.SetActive(false);

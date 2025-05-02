@@ -33,7 +33,6 @@ public class StartSceneManager : MonoBehaviour
     [Space(10)]
     [SerializeField] GameObject _createAccountWindow;
 
-
     void Start()
     {
         SoundManager.Instance.PlayStartSceneBGM();
@@ -51,13 +50,12 @@ public class StartSceneManager : MonoBehaviour
                         _fm.Get_UserPW(_idField.text,
                             delegate
                             {
-
                                 //이미 동일한 ID가 존재한다면.
                                 if (!string.IsNullOrEmpty(_fm.userVO.UserID))
                                 {
                                     _maskImage.raycastTarget = true;
                                     _infoWindowObject.SetActive(true);
-                                    _infoText.text = "이미 존재하는 아이디야!! 다른 아이디를 선택해줘!";
+                                    _infoText.text = "이미 존재하는 ID입니다."; //"이미 존재하는 아이디야!! 다른 아이디를 선택해줘!";
                                 }
                                 //존재하지 않는다면 생성 화면 open
                                 else
@@ -101,7 +99,7 @@ public class StartSceneManager : MonoBehaviour
                                 {
                                     _maskImage.raycastTarget = true;
                                     _infoWindowObject.SetActive(true);
-                                    _infoText.text = "없는 ID야. 다시 확인해줘!";
+                                    _infoText.text = "존재하지 않는 ID입니다."; //"없는 ID야. 다시 확인해줘!";
                                 }
                             });
                     });
@@ -121,7 +119,7 @@ public class StartSceneManager : MonoBehaviour
                     {
                         _maskImage.raycastTarget = true;
                         _infoWindowObject.SetActive(true);
-                        _infoText.text = "사용할 닉네임을 설정해줘!!";
+                        _infoText.text = "사용할 닉네임을 설정해주세요."; //"사용할 닉네임을 설정해줘!!";
                         return;
                     }
 
@@ -140,7 +138,7 @@ public class StartSceneManager : MonoBehaviour
         {
             _maskImage.raycastTarget = true;
             _infoWindowObject.SetActive(true);
-            _infoText.text = "아이디를 먼저 입력해줘!!";
+            _infoText.text = "아이디를 먼저 입력해주세요."; //"아이디를 먼저 입력해줘!!";
             return;
         }
 
@@ -148,7 +146,7 @@ public class StartSceneManager : MonoBehaviour
         {
             _maskImage.raycastTarget = true;
             _infoWindowObject.SetActive(true);
-            _infoText.text = "비밀번호를 먼저 입력해줘!!";
+            _infoText.text = "비밀번호를 먼저 입력해주세요."; //"비밀번호를 먼저 입력해줘!!";
             return;
         }
 
@@ -166,7 +164,7 @@ public class StartSceneManager : MonoBehaviour
         {
             _maskImage.raycastTarget = true;
             _infoWindowObject.SetActive(true);
-            _infoText.text = "일치하지 않는 아이디 혹은 비밀번호야! 확인해줘!";
+            _infoText.text = "일치하지 않는 아이디 혹은 비밀번호입니다."; //"일치하지 않는 아이디 혹은 비밀번호야! 확인해줘!";
         },
         delegate
         {
@@ -179,7 +177,7 @@ public class StartSceneManager : MonoBehaviour
     void OnSignUpClick()
     {
         SoundManager.Instance.PlayButtonClick();
-        Debug.Log("회원가입버튼 클릭");
+        Debug.Log("회원가입 버튼 클릭");
     }
 
     void OnExitClick()
