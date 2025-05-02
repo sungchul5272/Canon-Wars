@@ -10,6 +10,7 @@ public class SortLobbyUI : MonoBehaviour
     public GameObject joinFailedUI;
     public ScrollRect lobbyScrollView;
     public RectTransform lobbyScrollContent;
+    public Text noLobbyText;
     public TMP_Dropdown gameModeDropDown;
     public TMP_InputField lobbyCodeInputField;
     public Button refreshButton;
@@ -101,6 +102,7 @@ public class SortLobbyUI : MonoBehaviour
         lobbyScrollContent.sizeDelta = new Vector2(lobbyScrollContent.sizeDelta.x, instance.PublicLobbyDatas.Count * slotHeight);
         lobbyScrollView.gameObject.SetActive(true);
         refreshButton.interactable = true;
+        noLobbyText.gameObject.SetActive(instance.PublicLobbyDatas.Count <= 0);
     }
 
     public void ShowJoinFailedUI()
