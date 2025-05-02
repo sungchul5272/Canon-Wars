@@ -685,7 +685,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   leaveButton: {fileID: 165955099}
-  endButton: {fileID: 0}
 --- !u!114 &171334343
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4702,7 +4701,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -52179173452712981, guid: 61651e7e6b7cc694fad7acb0f51da40d, type: 3}
+  m_Sprite: {fileID: -1936355827857895663, guid: 947fd6b8e7a141740a960649b0e31330, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1

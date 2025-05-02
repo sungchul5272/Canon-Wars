@@ -69,7 +69,7 @@ public class LobbyManager : MonoBehaviour
     float _maintainLobbyTime = 20;
     float _rateLimitTime = 1.1f;
     float _gameStartTimeout = 10;
-    float _backToLobbyTimeout = 10;
+    float _backToLobbyTimeout = 9;
 
     void Awake()
     {
@@ -248,6 +248,7 @@ public class LobbyManager : MonoBehaviour
                 }
             }
 
+            stopwatch.Stop();
             if (lobbyId != string.Empty)
             {
                 Debug.Log($"복귀할 로비 참가: {lobbyId}");
@@ -861,6 +862,7 @@ public class LobbyManager : MonoBehaviour
     void LoadGameScene()
     {
         // 게임 씬 로드
+        Debug.Log("게임 씬을 로드합니다.");
         NetworkManager.Singleton.SceneManager.LoadScene(_gameSceneName, LoadSceneMode.Single);
     }
 

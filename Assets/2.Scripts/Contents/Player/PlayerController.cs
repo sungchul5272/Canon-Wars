@@ -444,7 +444,6 @@ public class PlayerController : NetworkBehaviour
         IngameUIController.Instance.SetFuel(_curFuel);
     }
 
-
     public void SetMyTurn()
     {
         _isCanFire = true;
