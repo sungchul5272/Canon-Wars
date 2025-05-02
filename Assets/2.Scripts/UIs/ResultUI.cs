@@ -28,7 +28,7 @@ public class ResultUI : MonoBehaviour
 
         _backToMainBtn.onClick.AddListener(OnClickBackToMainButton);
         _backToRoomBtn.onClick.AddListener(OnClickBackToRoomButton);
-        _waitCancleBtn.onClick.AddListener(OnClickWaitCancleButton);
+        _waitCancleBtn.onClick.AddListener(OnClickWaitCancelButton);
     }
 
     public void ShowResult(string resultType)
@@ -107,7 +107,7 @@ public class ResultUI : MonoBehaviour
         SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
     }
 
-    void OnClickWaitCancleButton()
+    void OnClickWaitCancelButton()
     {
         _connectWaitingUI.SetActive(false);
 
