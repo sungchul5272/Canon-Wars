@@ -9,7 +9,7 @@ public class StartLobbyUI : MonoBehaviour
     public Button joinButton;
     public Button[] backButtons;
 
-    void Start()
+    public void Init()
     {
         LobbyManager instance = LobbyManager.Instance;
 

@@ -21,7 +21,6 @@ public class GameInitializer : NetworkBehaviour
     [SerializeField] Text _enemyWinRateText;
     [SerializeField]  Image _mapBackgroundImage;
 
-
     [Header("맵 스포너")]
     [SerializeField] private MapSpawner _mapSpawner;
 
@@ -34,8 +33,6 @@ public class GameInitializer : NetworkBehaviour
     private NetworkList<Vector3> _spawnPosList = new(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private Dictionary<ulong, UserData> _clientUserData = new();
     private List<bool> _allDones = new();
-
-    private float _gameLoadingTimeout = 10;
 
     void Awake()
     {
@@ -151,16 +148,8 @@ public class GameInitializer : NetworkBehaviour
 
     IEnumerator WaitAllClientsAsync()
     {
-        float timer = 0;
         while (_allDones.Count < NetworkPlayerData.GetMaxPlayer())
         {
-            if (timer >= _gameLoadingTimeout)
-            {
-                Debug.LogWarning("타임아웃되어 로비로 돌아갑니다.");
-                IngameManager.Instance.BackToLobby();
-            }
-
-            timer += Time.deltaTime;
             yield return null;
         }
 
@@ -208,6 +197,7 @@ public class GameInitializer : NetworkBehaviour
         PlayerController tankController = tank.GetComponent<PlayerController>();
         tankController._tankType.Value = tankData._tankType;
 
+        // 완료
         _allDones.Add(true);
     }
 

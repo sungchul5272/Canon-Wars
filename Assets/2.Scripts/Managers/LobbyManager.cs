@@ -38,10 +38,6 @@ public class LobbyManager : MonoBehaviour
     public SortLobbyUI sortLobbyUI;
     public MainLobbyUI mainLobbyUI;
     public GameObject loadingUI;
-    public GameObject sessionEndedUI;
-    public GameObject connectionFailedUI;
-    public Button sessionEndedButton;
-    public Button connectionFailButton;
 
     public static LobbyManager Instance { get; private set; }
 
@@ -72,6 +68,7 @@ public class LobbyManager : MonoBehaviour
     string _lobbyNotFoundError = "lobby not found";
     float _maintainLobbyTime = 20;
     float _rateLimitTime = 1.1f;
+    float _gameStartTimeout = 10;
     bool _isGameStart;
 
     void Awake()
@@ -81,7 +78,14 @@ public class LobbyManager : MonoBehaviour
 
     void Start()
     {
+        // 초기화
+        startLobbyUI.Init();
+        createLobbyUI.Init();
+        sortLobbyUI.Init();
+        mainLobbyUI.Init();
+
         SoundManager.Instance.PlayLobbySceneBGM();
+
         _joinedLobby = null;
         _isGameStart = false;
 
@@ -137,18 +141,6 @@ public class LobbyManager : MonoBehaviour
             Application.Quit();
 #endif
         });
-
-        // 세션 종료 확인
-        sessionEndedButton.onClick.AddListener(() =>
-        {
-            sessionEndedUI.SetActive(false);
-        });
-
-        // 연결 실패 확인
-        connectionFailButton.onClick.AddListener(() =>
-        {
-            connectionFailedUI.SetActive(false);
-        });
     }
 
     async void LogInUnityService()
@@ -170,8 +162,7 @@ public class LobbyManager : MonoBehaviour
                 {
                     // 연결이 끊긴 경우
                     Debug.Log("연결이 끊겼으므로 시작 메뉴로 이동합니다.");
-                    startPanel.SetActive(true);
-                    sessionEndedUI.SetActive(true);
+                    mainLobbyUI.ShowConnectionFailedUI();
                 }
 
                 return;
@@ -195,7 +186,7 @@ public class LobbyManager : MonoBehaviour
         NetworkManager singleton = NetworkManager.Singleton;
         if (singleton.ConnectedClients.Count != NetworkPlayerData.GetMaxPlayer())
         {
-            connectionFailedUI.SetActive(true);
+            mainLobbyUI.ShowConnectionFailedUI();
         }
 
         // 메인 로비로 복귀
@@ -237,20 +228,40 @@ public class LobbyManager : MonoBehaviour
                     }
                     else if (lobbyCount > 1)
                     {
-                        Debug.LogWarning("이전 로비가 남아있습니다.");
+                        Debug.LogError("이전 로비가 남아있습니다.");
                     }
 
                     await Task.Delay((int)(_rateLimitTime * 1000)); // 요청 대기
                 }
                 catch (LobbyServiceException ex)
                 {
-                    Debug.LogError(ex.Message);
+                    if (ex.Message.Equals(_lobbyNotFoundError))
+                    {
+                        Debug.Log(ex.Message);
+                    }
+                    else
+                    {
+                        Debug.LogError(ex.Message);
+                    }
+
+                    ShowJoinFailed();
                 }
             }
 
             Debug.Log("복귀할 로비 참가.");
             JoinLobby(string.Empty, -1, lobbyId);
         }
+    }
+
+    void ShowJoinFailed()
+    {
+        // 로비 탐색 화면으로 변경
+        mainLobbyUI.gameObject.SetActive(false);
+        sortLobbyUI.gameObject.SetActive(true);
+
+        // 참가 실패 UI 활성화
+        sortLobbyUI.ShowJoinFailedUI();
+        _joinedLobby = null;
     }
 
     public async void CreateLobby(EGameMode gameMode, string lobbyName, bool isPrivate, string internalCode)
@@ -492,8 +503,7 @@ public class LobbyManager : MonoBehaviour
                 Debug.LogError(ex.Message);
             }
 
-            sortLobbyUI.ShowJoinFailedUI();
-            _joinedLobby = null;
+            ShowJoinFailed();
         }
     }
 
@@ -719,23 +729,31 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    void StartGameAsClient(string joinCode)
+    async Task<string> CreateRelay()
     {
-        // 클라이언트로 게임 시작
-        _isGameStart = true;
-        loadingUI.SetActive(true);
-        JoinRelay(joinCode);
-        CancelInvoke(nameof(RefreshPlayers));
-        EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
-        string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
-        NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
-        _joinedLobby = null;
+        // 릴레이 생성
+        try
+        {
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(NetworkPlayerData.GetMaxPlayer() - 1);
+            string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            RelayServerData relayServerData = new(allocation, "dtls");
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
+            NetworkManager.Singleton.StartHost();
+            Debug.Log("Game started as host.");
+            return joinCode;
+        }
+        catch (RelayServiceException ex)
+        {
+            Debug.LogError(ex.Message);
+            ShowGameStartFailed();
+            return "0";
+        }
     }
 
-    public bool IsPlayer(int index)
+    void ShowGameStartFailed()
     {
-        // 해당 플레이어가 본인인지 확인
-        return _joinedLobby.Players[index].Id == AuthenticationService.Instance.PlayerId;
+        mainLobbyUI.ShowGameStartFailedUI();
+        loadingUI.SetActive(false);
     }
 
     async void RefreshPlayers()
@@ -827,24 +845,23 @@ public class LobbyManager : MonoBehaviour
         loadingUI.SetActive(_isGameStart);
     }
 
-    async Task<string> CreateRelay()
+    public bool IsPlayer(int index)
     {
-        // 릴레이 생성
-        try
-        {
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(NetworkPlayerData.GetMaxPlayer() - 1);
-            string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            RelayServerData relayServerData = new(allocation, "dtls");
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
-            NetworkManager.Singleton.StartHost();
-            Debug.Log("Game started as host.");
-            return joinCode;
-        }
-        catch (RelayServiceException ex)
-        {
-            Debug.LogError(ex.Message);
-            return null;
-        }
+        // 해당 플레이어가 본인인지 확인
+        return _joinedLobby.Players[index].Id == AuthenticationService.Instance.PlayerId;
+    }
+
+    void StartGameAsClient(string joinCode)
+    {
+        // 클라이언트로 게임 시작
+        _isGameStart = true;
+        loadingUI.SetActive(true);
+        JoinRelay(joinCode);
+        CancelInvoke(nameof(RefreshPlayers));
+        EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
+        string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
+        NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate);
+        _joinedLobby = null;
     }
 
     async void JoinRelay(string joinCode)
@@ -856,12 +873,31 @@ public class LobbyManager : MonoBehaviour
             RelayServerData relayServerData = new(joinAllocation, "dtls");
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
             NetworkManager.Singleton.StartClient();
+            StartCoroutine(CheckConnectionAsync());
             Debug.Log("Game started as client.");
         }
         catch (RelayServiceException ex)
         {
             Debug.LogError(ex.Message);
+            ShowGameStartFailed();
         }
+    }
+
+    IEnumerator CheckConnectionAsync()
+    {
+        float timer = 0;
+        while (timer < _gameStartTimeout)
+        {
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // 연결이 끊어진 경우
+        Debug.Log("게임 씬으로 넘어가기 전 타임아웃 되었습니다.");
+        NetworkManager.Singleton.Shutdown();
+        loadingUI.SetActive(false);
+        mainLobbyUI.ShowConnectionFailedUI();
+        mainLobbyUI.LeaveMainLobbyUI();
     }
 
     void LoadGameScene()

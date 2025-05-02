@@ -21,7 +21,7 @@ public class SortLobbyUI : MonoBehaviour
 
     EGameMode GameMode => (EGameMode)Enum.Parse(typeof(EGameMode), $"Mode{gameModeDropDown.options[gameModeDropDown.value].text}");
 
-    void Start()
+    public void Init()
     {
         lobbyScrollView.gameObject.SetActive(false);
 
@@ -41,7 +41,7 @@ public class SortLobbyUI : MonoBehaviour
             LobbyManager.Instance.RefreshPublicLobbies(GameMode);
         });
 
-        // 경고 확인
+        // 로비 참가 실패 시 확인 버튼
         joinFailConfirmButton.onClick.AddListener(() =>
         {
             joinFailedUI.SetActive(false);

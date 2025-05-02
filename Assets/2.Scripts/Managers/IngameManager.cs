@@ -41,8 +41,10 @@ public class IngameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // 연결이 끊어졌을 때 이벤트
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisConnect;
 
+        // 턴이 바뀔 때 이벤트
         _netTurnIndex.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 턴 카운트 변경: {prev} → {next}");
@@ -55,6 +57,7 @@ public class IngameManager : NetworkBehaviour
             }
         };
 
+        // 바람이 바뀔 때 이벤트
         _netWindForce.OnValueChanged += (prev, next) =>
         {
             Debug.Log($"[IngameManager] 바람 세기 변경: {prev} → {next}");
@@ -67,11 +70,23 @@ public class IngameManager : NetworkBehaviour
         }
     }
 
+    public override void OnNetworkDespawn()
+    {
+        // 씬이 바뀔 때 이벤트 해제
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisConnect;
+    }
+
     void OnClientDisConnect(ulong clientId)
     {
-        if (clientId == NetworkManager.Singleton.LocalClientId && LobbyManager.Instance == null)
+        if (clientId == NetworkManager.Singleton.LocalClientId)
         {
+            // 네트워크가 끊기면 메인화면으로
             LeaveGame();
+        }
+        else
+        {
+            // 호스트는 로비로 복귀
+            BackToLobby();
         }
     }
 

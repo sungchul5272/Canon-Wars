@@ -11,7 +11,7 @@ public class CreateLobbyUI : MonoBehaviour
     public Button createButton;
     public Button backButton;
 
-    void Start()
+    public void Init()
     {
         LobbyManager instance = LobbyManager.Instance;
 

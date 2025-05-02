@@ -7,6 +7,8 @@ public class MainLobbyUI : MonoBehaviour
 {
     public PlayerSlotUI playerSlotPrefab;
     public GameObject sessionEndedUI;
+    public GameObject connectionFailedUI;
+    public GameObject gameStartFailedUI;
     public GameObject kickedUI;
     public ScrollRect playerScrollView;
     public RectTransform playerScrollContent;
@@ -16,6 +18,8 @@ public class MainLobbyUI : MonoBehaviour
     public Button playButton;
     public Button copyCodeButton;
     public Button sessionEndedButton;
+    public Button connectionFailedButton;
+    public Button gameStartFailedButton;
     public Button kickedButton;
     public Button backButton;
     public Button mapChangeButton;
@@ -36,7 +40,7 @@ public class MainLobbyUI : MonoBehaviour
 
     eMapType _changedMapType = eMapType.Random;
 
-    void Start()
+    public void Init()
     {
         playerScrollView.gameObject.SetActive(false);
         LobbyManager instance = LobbyManager.Instance;
@@ -69,6 +73,20 @@ public class MainLobbyUI : MonoBehaviour
             SoundManager.Instance.PlayButtonClick();
             sessionEndedUI.SetActive(false);
             LeaveMainLobbyUI();
+        });
+
+        // 연결이 끊어진 경우 확인 버튼
+        connectionFailedButton.onClick.AddListener(() =>
+        {
+            SoundManager.Instance.PlayButtonClick();
+            connectionFailedUI.SetActive(false);
+        });
+
+        // 게임 시작이 실패한 경우 확인 버튼
+        gameStartFailedButton.onClick.AddListener(() =>
+        {
+            SoundManager.Instance.PlayButtonClick();
+            gameStartFailedUI.SetActive(false);
         });
 
         // 추방된 경우 확인 버튼
@@ -283,6 +301,18 @@ public class MainLobbyUI : MonoBehaviour
     {
         // 로비에서 나와졌을 경우
         sessionEndedUI.SetActive(true);
+    }
+
+    public void ShowConnectionFailedUI()
+    {
+        // 연결이 끊어졌을 경우
+        connectionFailedUI.SetActive(true);
+    }
+
+    public void ShowGameStartFailedUI()
+    {
+        // 게임 시작이 실패한 경우
+        gameStartFailedUI.SetActive(true);
     }
 
     public void ShowKickedUI()
