@@ -34,6 +34,8 @@ public static class NetworkPlayerData
         InternalLobbyCode = internalLobbyCode;
         IsPrivateLobby = isPrivateLobby;
         IsHost = isHost;
+
+        Debug.Log($"게임 모드: {gameMode}, 맵: {mapType}, 탱크: {tankType}, 로비 제목: {lobbyName}, 내부 코드: {internalLobbyCode}, 공개: {isPrivateLobby}, 호스트: {isHost}.");
     }
 
     public static void RemoveGameInfo()
