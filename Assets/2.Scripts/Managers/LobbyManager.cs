@@ -69,7 +69,7 @@ public class LobbyManager : MonoBehaviour
     float _maintainLobbyTime = 20;
     float _rateLimitTime = 1.1f;
     float _gameStartTimeout = 10;
-    float _backToLobbyTimeout = 9;
+    float _backToLobbyTimeout = 10;
 
     void Awake()
     {
@@ -680,6 +680,13 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    void LoadGameScene()
+    {
+        // 게임 씬 로드
+        Debug.Log("게임 씬을 로드합니다.");
+        NetworkManager.Singleton.SceneManager.LoadScene(_gameSceneName, LoadSceneMode.Single);
+    }
+
     async Task<string> CreateRelay()
     {
         // 릴레이 생성
@@ -857,13 +864,6 @@ public class LobbyManager : MonoBehaviour
             timer += Time.deltaTime;
             yield return null;
         }
-    }
-
-    void LoadGameScene()
-    {
-        // 게임 씬 로드
-        Debug.Log("게임 씬을 로드합니다.");
-        NetworkManager.Singleton.SceneManager.LoadScene(_gameSceneName, LoadSceneMode.Single);
     }
 
     Unity.Services.Lobbies.Models.Player GetPlayer(bool isHost)

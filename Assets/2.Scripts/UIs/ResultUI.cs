@@ -19,7 +19,6 @@ public class ResultUI : MonoBehaviour
 
     Coroutine _waitHostCoroutine;
 
-    string _lobbySceneName = "2.LobbyScene";
     float _waitHostTimeout = 30;
 
     void Awake()
@@ -62,11 +61,10 @@ public class ResultUI : MonoBehaviour
 
     void OnClickBackToRoomButton()
     {
-        NetworkManager singleton = NetworkManager.Singleton;
-        if (singleton.IsServer)
+        if (NetworkManager.Singleton.IsServer)
         {
             // 호스트는 바로 복귀 가능
-            IngameManager.Instance.HostBackToLobbyClientRpc();
+            StartCoroutine(IngameManager.Instance.SetHostToLobby());
         }
         else
         {
@@ -101,10 +99,7 @@ public class ResultUI : MonoBehaviour
             yield return null;
         }
 
-        NetworkManager.Singleton.Shutdown();
-
-        // 본인만 로비 씬 로드
-        SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
+        StartCoroutine(IngameManager.Instance.BackToLobbyAysnc());
     }
 
     void OnClickWaitCancelButton()

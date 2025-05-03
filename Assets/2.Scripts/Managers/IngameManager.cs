@@ -108,7 +108,7 @@ public class IngameManager : NetworkBehaviour
             {
                 // 남은 클라이언트(호스트)는 로비로 복귀
                 NetworkPlayerData.GameAborted();
-                BackToLobby();
+                StartCoroutine(BackToLobbyAysnc());
             }
         }
     }
@@ -123,32 +123,65 @@ public class IngameManager : NetworkBehaviour
     public void LeaveGame()
     {
         Debug.Log("Leave game and back to lobby.");
-
         NetworkPlayerData.RemoveGameInfo();
+        StartCoroutine(BackToLobbyAysnc());
+    }
+
+    public IEnumerator BackToLobbyAysnc()
+    {
+        NetworkManager singleton = NetworkManager.Singleton;
+
+        // 모든 네트워크 오브젝트 삭제
+        if (IsServer)
+        {
+            List<NetworkObject> netObjs = new();
+            foreach (var playerObject in singleton.SpawnManager.PlayerObjects)
+            {
+                netObjs.Add(playerObject);
+            }
+
+            for (int i = 0; i < netObjs.Count; i++)
+            {
+                Debug.Log($"네트워크 오브젝트 ({netObjs[i]}) 삭제.");
+                netObjs[i].Despawn();
+            }
+        }
 
         // 연결 해제
-        NetworkManager.Singleton.Shutdown();
+        singleton.Shutdown();
+
+        // 네트워크 종료까지 대기
+        while (singleton.ShutdownInProgress || singleton.IsListening)
+        {
+            yield return null;
+        }
 
         // 본인만 로비 씬 로드
         SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
     }
 
-    public void BackToLobby()
+    public IEnumerator SetHostToLobby()
     {
-        Debug.Log("End game and back to lobby.");
+        bool isListening = NetworkManager.Singleton.IsListening;
+        if (isListening)
+        {
+            SetHostToLobbyClientRpc();
+        }
 
-        if (NetworkManager.Singleton.IsListening)
+        // 호스트 복귀 알림이 보내질 때까지 대기
+        while (!HostBackToLobby && isListening)
         {
-            if (IsServer)
-            {
-                // 네트워크가 살아있으면 호스트가 모두에게 로비 씬 로드
-                NetworkManager.Singleton.SceneManager.LoadScene(_lobbySceneName, LoadSceneMode.Single);
-            }
+            yield return null;
         }
-        else
-        {
-            LeaveGame();
-        }
+
+        StartCoroutine(BackToLobbyAysnc());
+    }
+
+    [ClientRpc]
+    void SetHostToLobbyClientRpc()
+    {
+        // 호스트 로비 복귀 알림
+        HostBackToLobby = true;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -398,21 +431,6 @@ public class IngameManager : NetworkBehaviour
     public int GetSelectShellIndex()
     {
         return _netSelectedShellIndex.Value;
-    }
-
-    [ClientRpc]
-    public void HostBackToLobbyClientRpc()
-    {
-        // 호스트 로비 복귀 알림
-        HostBackToLobby = true;
-
-        if (IsServer)
-        {
-            NetworkManager.Singleton.Shutdown();
-
-            // 본인만 로비 씬 로드
-            SceneManager.LoadSceneAsync(_lobbySceneName, LoadSceneMode.Single);
-        }
     }
 }
 
