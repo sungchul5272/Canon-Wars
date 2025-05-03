@@ -131,21 +131,21 @@ public class IngameManager : NetworkBehaviour
     {
         NetworkManager singleton = NetworkManager.Singleton;
 
-        // 모든 네트워크 오브젝트 삭제
-        if (IsServer)
-        {
-            List<NetworkObject> netObjs = new();
-            foreach (var playerObject in singleton.SpawnManager.PlayerObjects)
-            {
-                netObjs.Add(playerObject);
-            }
+        //// 모든 네트워크 오브젝트 삭제
+        //if (IsServer)
+        //{
+        //    List<NetworkObject> netObjs = new();
+        //    foreach (var playerObject in singleton.SpawnManager.PlayerObjects)
+        //    {
+        //        netObjs.Add(playerObject);
+        //    }
 
-            for (int i = 0; i < netObjs.Count; i++)
-            {
-                Debug.Log($"네트워크 오브젝트 ({netObjs[i]}) 삭제.");
-                netObjs[i].Despawn();
-            }
-        }
+        //    for (int i = 0; i < netObjs.Count; i++)
+        //    {
+        //        Debug.Log($"네트워크 오브젝트 ({netObjs[i]}) 삭제.");
+        //        netObjs[i].Despawn();
+        //    }
+        //}
 
         // 연결 해제
         singleton.Shutdown();

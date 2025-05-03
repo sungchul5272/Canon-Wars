@@ -370,6 +370,7 @@ public class LobbyManager : MonoBehaviour
                 }
             });
 
+            loadingUI.SetActive(false);
             PublicLobbyDatas.Clear();
             mainLobbyUI.EnterMainLobbyUI(lobbyName, _joinedLobby.LobbyCode);
             ReadyPlayer(true);
@@ -668,11 +669,13 @@ public class LobbyManager : MonoBehaviour
             });
 
             CancelInvoke(nameof(MaintainLobby));
-            Invoke(nameof(LoadGameScene), _rateLimitTime);
             EGameMode gameMode = (EGameMode)System.Enum.Parse(typeof(EGameMode), _joinedLobby.Data[_gameModeDataKey].Value);
             string internalCode = _joinedLobby.Data[_internalLobbyCodeDataKey].Value;
             NetworkPlayerData.SetGameInfo(gameMode, SelectedMapType, SelectedTankType, _joinedLobby.Name, internalCode, _joinedLobby.IsPrivate, true);
             _joinedLobby = null;
+
+            // 게임 씬 로드
+            StartCoroutine(LoadGameSceneAsync());
         }
         catch (LobbyServiceException ex)
         {
@@ -680,10 +683,10 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    void LoadGameScene()
+    IEnumerator LoadGameSceneAsync()
     {
-        // 게임 씬 로드
         Debug.Log("게임 씬을 로드합니다.");
+        yield return new WaitForSeconds(_rateLimitTime);
         NetworkManager.Singleton.SceneManager.LoadScene(_gameSceneName, LoadSceneMode.Single);
     }
 
@@ -692,11 +695,12 @@ public class LobbyManager : MonoBehaviour
         // 릴레이 생성
         try
         {
+            NetworkManager singleton = NetworkManager.Singleton;
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(NetworkPlayerData.GetMaxPlayer() - 1);
             string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             RelayServerData relayServerData = new(allocation, "dtls");
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
-            NetworkManager.Singleton.StartHost();
+            singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
+            singleton.StartHost();
             Debug.Log("Game started as host.");
             return joinCode;
         }
@@ -802,7 +806,7 @@ public class LobbyManager : MonoBehaviour
         }
 
         mainLobbyUI.RefreshPlayersUI(playerIndex, gameReady);
-        if (!isGameStarted)
+        if (!isGameStarted && !IsLobbyHost)
         {
             loadingUI.SetActive(false);
         }
@@ -831,10 +835,11 @@ public class LobbyManager : MonoBehaviour
         // 릴레이 참가
         try
         {
+            NetworkManager singleton = NetworkManager.Singleton;
             JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
             RelayServerData relayServerData = new(joinAllocation, "dtls");
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
-            NetworkManager.Singleton.StartClient();
+            singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
+            singleton.StartClient();
             StartCoroutine(CheckConnectionAsync());
             Debug.Log("Game started as client.");
         }
