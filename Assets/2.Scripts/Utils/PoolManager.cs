@@ -43,10 +43,14 @@ public class Pool
         return _pool.Get();
     }
 
-    public void Push(GameObject prefab)
+    public void Push(GameObject obj)
     {
-        _pool.Release(prefab);
+        if (obj == null || obj.Equals(null))
+            return;
+
+        _pool.Release(obj);
     }
+
 
     private GameObject OnCreate()
     {
@@ -58,19 +62,22 @@ public class Pool
         return go;
     }
 
-    private void OnGet(GameObject prefab)
+    private void OnGet(GameObject obj)
     {
-        prefab.SetActive(true);
+        if (obj != null && !obj.Equals(null))
+            obj.SetActive(true);
     }
 
-    private void OnRelease(GameObject prefab)
+    private void OnRelease(GameObject obj)
     {
-        prefab.SetActive(false);
+        if (obj != null && !obj.Equals(null))
+            obj.SetActive(false);
     }
 
-    private void OnDestroy(GameObject prefab)
+    private void OnDestroy(GameObject obj)
     {
-        GameObject.Destroy(prefab);
+        if (obj != null && !obj.Equals(null))
+            GameObject.Destroy(obj);
     }
 }
 

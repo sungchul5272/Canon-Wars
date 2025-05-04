@@ -311,11 +311,19 @@ public class IngameManager : NetworkBehaviour
             if (playerObj != null)
             {
                 Debug.Log($"서버: 플레이어 {senderId} 처치됨, 오브젝트 제거");
+                StopTankMoveLoopClientRpc();
                 playerObj.Despawn(true);
             }
         }
 
         CheckGameEndCondition();
+    }
+
+
+    [ClientRpc]
+    public void StopTankMoveLoopClientRpc()
+    {
+        SoundManager.Instance.StopTankMoveLoop();
     }
 
     bool CheckGameEndCondition()
