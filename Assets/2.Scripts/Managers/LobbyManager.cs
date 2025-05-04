@@ -157,7 +157,10 @@ public class LobbyManager : MonoBehaviour
                 {
                     // 연결이 끊긴 경우
                     Debug.Log("연결이 끊겼으므로 시작 메뉴로 이동합니다.");
-                    mainLobbyUI.ShowConnectionFailedUI();
+                    if (NetworkPlayerData.IsGameAborted)
+                    {
+                        mainLobbyUI.ShowConnectionFailedUI();
+                    }
                 }
 
                 return;
@@ -200,6 +203,10 @@ public class LobbyManager : MonoBehaviour
         else
         {
             Debug.Log("복귀할 로비 탐색.");
+
+            // 이전 로비 탐색 방지를 위해 잠시 대기
+            await Task.Delay((int)(_rateLimitTime * 1000));
+
             Lobby rejoinLobby = null;
             System.Diagnostics.Stopwatch stopwatch = new();
             stopwatch.Start();
@@ -494,18 +501,23 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public async void JoinLobby(string lobbyCode, int index, string recreateId)
+    public async void JoinLobby(string lobbyCode, int index, string rejoinId)
     {
         // 로비 참가
         try
         {
-            await Task.Delay((int)(_rateLimitTime * 1000)); // 입장 요청 대기
+            // 복귀 로비가 아닌 경우
+            if (rejoinId == string.Empty)
+            {
+                // 인터셉트 방지를 위해 입장 요청 대기
+                await Task.Delay((int)(_rateLimitTime * 1000));
+            }
 
             loadingUI.SetActive(true);
             if (lobbyCode == string.Empty)
             {
                 // 공개 로비 참가
-                string lobbyId = (recreateId != string.Empty) ? recreateId : ((index >= 0) ? PublicLobbyDatas[index].id : "0");
+                string lobbyId = (rejoinId != string.Empty) ? rejoinId : ((index >= 0) ? PublicLobbyDatas[index].id : "0");
                 _joinedLobby = await Lobbies.Instance.JoinLobbyByIdAsync(lobbyId, new JoinLobbyByIdOptions
                 {
                     Player = GetPlayer(false),

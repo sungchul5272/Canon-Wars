@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -10,21 +9,21 @@ public class Pool
 
     private Transform _root;
 
-    public Transform Root
-    {
-        get
-        {
-            if (_root == null)
-            {
-                GameObject go = new GameObject();
-                go.name = $"{_prefab.name} Pooling Root";
+    //public Transform Root
+    //{
+    //    get
+    //    {
+    //        if (_root == null)
+    //        {
+    //            GameObject go = new GameObject();
+    //            go.name = $"{_prefab.name} Pooling Root";
 
-                _root = go.transform;
-            }
+    //            _root = go.transform;
+    //        }
 
-            return _root;
-        }
-    }
+    //        return _root;
+    //    }
+    //}
 
     public Pool(GameObject prefab)
     {
@@ -50,7 +49,6 @@ public class Pool
 
         _pool.Release(obj);
     }
-
 
     private GameObject OnCreate()
     {
@@ -96,7 +94,6 @@ public class PoolManager
             return _instance;
         }
     }
-
 
     Dictionary<string, Pool> _pools = new Dictionary<string, Pool>();
 

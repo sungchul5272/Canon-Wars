@@ -56,7 +56,8 @@ public class ResultUI : MonoBehaviour
     void OnClickBackToMainButton()
     {
         // ¶°³ª±â
-        IngameManager.Instance.LeaveGame();
+        NetworkPlayerData.RemoveGameInfo();
+        StartCoroutine(IngameManager.Instance.LeaveGameAsync());
     }
 
     void OnClickBackToRoomButton()
@@ -99,7 +100,7 @@ public class ResultUI : MonoBehaviour
             yield return null;
         }
 
-        StartCoroutine(IngameManager.Instance.BackToLobbyAysnc());
+        StartCoroutine(IngameManager.Instance.LeaveGameAsync());
     }
 
     void OnClickWaitCancelButton()

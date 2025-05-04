@@ -97,19 +97,12 @@ public class IngameManager : NetworkBehaviour
 
     void OnClientDisConnect(ulong clientId)
     {
+        // 게임이 끝났을 땐 나가는 버튼이 있으므로 게임 도중만 처리
         if (!_isGameEnded)
         {
-            if (clientId == NetworkManager.Singleton.LocalClientId)
-            {
-                // 네트워크가 끊기면 메인화면으로
-                LeaveGame();
-            }
-            else
-            {
-                // 남은 클라이언트(호스트)는 로비로 복귀
-                NetworkPlayerData.GameAborted();
-                StartCoroutine(BackToLobbyAysnc());
-            }
+            // 네트워크가 끊기면 메인화면으로
+            NetworkPlayerData.GameAborted();
+            StartCoroutine(LeaveGameAsync());
         }
     }
 
@@ -120,34 +113,12 @@ public class IngameManager : NetworkBehaviour
         _isGameStarted = true;
     }
 
-    public void LeaveGame()
+    public IEnumerator LeaveGameAsync()
     {
         Debug.Log("Leave game and back to lobby.");
-        NetworkPlayerData.RemoveGameInfo();
-        StartCoroutine(BackToLobbyAysnc());
-    }
-
-    public IEnumerator BackToLobbyAysnc()
-    {
-        NetworkManager singleton = NetworkManager.Singleton;
-
-        //// 모든 네트워크 오브젝트 삭제
-        //if (IsServer)
-        //{
-        //    List<NetworkObject> netObjs = new();
-        //    foreach (var playerObject in singleton.SpawnManager.PlayerObjects)
-        //    {
-        //        netObjs.Add(playerObject);
-        //    }
-
-        //    for (int i = 0; i < netObjs.Count; i++)
-        //    {
-        //        Debug.Log($"네트워크 오브젝트 ({netObjs[i]}) 삭제.");
-        //        netObjs[i].Despawn();
-        //    }
-        //}
 
         // 연결 해제
+        NetworkManager singleton = NetworkManager.Singleton;
         singleton.Shutdown();
 
         // 네트워크 종료까지 대기
@@ -174,7 +145,7 @@ public class IngameManager : NetworkBehaviour
             yield return null;
         }
 
-        StartCoroutine(BackToLobbyAysnc());
+        StartCoroutine(LeaveGameAsync());
     }
 
     [ClientRpc]
