@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.UI;
 using System.Collections;
-using UnityEditor.PackageManager;
 
 public class GameInitializer : NetworkBehaviour
 {

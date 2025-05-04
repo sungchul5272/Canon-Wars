@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,7 +27,7 @@ public class MapSpawner : MonoBehaviour
 
     public List<Vector3> GetSpawnPosPList()
     {
-        List<Vector3> posList = new List<Vector3>();
+        List<Vector3> posList = new();
 
         foreach (Transform trans in _selectedGround.SpawnTransList)
         {
@@ -59,7 +58,7 @@ public class MapSpawner : MonoBehaviour
         if (_curMap != null)
         {
             // Z축은 0으로 고정, X와 Y만 사용
-            Vector3 size = new Vector3(_curMap.mapSize.x, _curMap.mapSize.y, 0f);
+            Vector3 size = new(_curMap.mapSize.x, _curMap.mapSize.y, 0f);
 
             Gizmos.DrawWireCube(center, size);
         }

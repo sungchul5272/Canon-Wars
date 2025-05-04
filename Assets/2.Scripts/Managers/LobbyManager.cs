@@ -225,7 +225,7 @@ public class LobbyManager : MonoBehaviour
                     }
                     else if (lobbyCount > 1)
                     {
-                        Debug.LogError("이전 로비가 남아있습니다.");
+                        Debug.LogWarning("이전 로비가 남아있습니다.");
                     }
 
                     // 타임아웃 검사
@@ -237,7 +237,7 @@ public class LobbyManager : MonoBehaviour
                     }
 
                     Debug.Log("로비 탐색 재요청 대기.");
-                    await Task.Delay((int)(_rateLimitTime * 1000)); // 요청 대기
+                    await Task.Delay((int)(_rateLimitTime * 1000)); // 로비 탐색 재요청 대기
                 }
                 catch (LobbyServiceException ex)
                 {
@@ -377,7 +377,7 @@ public class LobbyManager : MonoBehaviour
             ReadyPlayer(true);
             InvokeRepeating(nameof(MaintainLobby), _maintainLobbyTime, _maintainLobbyTime);
             InvokeRepeating(nameof(RefreshPlayers), _rateLimitTime, _rateLimitTime);
-            Debug.Log($"생성된 로비: {lobbyName}, 공개 여부: {privateMode}.");
+            Debug.Log($"생성된 로비: {_joinedLobby.Name}, 공개 여부: {privateMode}, 코드: {_joinedLobby.LobbyCode}, 내부 코드: {_joinedLobby.Data[_internalLobbyCodeDataKey].Value}.");
 
             // 이전 로비 정보는 삭제
             NetworkPlayerData.RemoveGameInfo();
@@ -499,6 +499,8 @@ public class LobbyManager : MonoBehaviour
         // 로비 참가
         try
         {
+            await Task.Delay((int)(_rateLimitTime * 1000)); // 입장 요청 대기
+
             loadingUI.SetActive(true);
             if (lobbyCode == string.Empty)
             {

@@ -1,4 +1,6 @@
-using System.Collections.Generic;
+// 사용되지 않음
+
+/*using System.Collections.Generic;
 using UnityEngine;
 
 public class MapGenerator : MonoBehaviour
@@ -155,4 +157,4 @@ public class MapGenerator : MonoBehaviour
         return _colliderGroundList;
     }
     #endregion
-}
+}*/
