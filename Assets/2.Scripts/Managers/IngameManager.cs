@@ -317,6 +317,12 @@ public class IngameManager : NetworkBehaviour
 
         if (alivePlayers.Count <= 1)
         {
+            // 카메라 흔들림 제거
+            CameraShake camShake = Camera.main.GetComponent<CameraShake>();
+
+            if (camShake != null)
+                camShake.StopShake();
+
             Debug.Log("[CheckGameEndCondition] 게임 종료 조건 만족, EndGame 호출");
             EndGame(alivePlayers.Count == 1 ? alivePlayers[0].OwnerClientId : (ulong?)null);
             return true;
