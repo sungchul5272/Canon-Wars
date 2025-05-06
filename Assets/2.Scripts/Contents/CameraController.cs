@@ -28,6 +28,7 @@ public class CameraController : MonoBehaviour
 
     private float _zoomTime = 0f;
     private bool _isInit = false;
+    private bool _cursorLock = true;
 
     void Awake()
     {
@@ -104,6 +105,13 @@ public class CameraController : MonoBehaviour
                 MoveCameraAroundMap();
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            _cursorLock = !_cursorLock;
+        }
+
+        Cursor.lockState = _cursorLock ? CursorLockMode.Confined : CursorLockMode.None;
     }
 
     // 점진적으로 카메라 줌아웃 하는 메소드
@@ -158,7 +166,7 @@ public class CameraController : MonoBehaviour
         if (leftDis <= EDGE_THRESHOLD)
             moveDir += Vector3.left;
 
-        Vector3 movePos = moveDir.normalized * Time.deltaTime * _camMoveSpeed;
+        Vector3 movePos = _camMoveSpeed * Time.deltaTime * moveDir.normalized;
 
         // 카메라 위치 갱신
         float newPosX = Mathf.Clamp(transform.position.x + movePos.x, _mapBottomLeft.x, _mapTopRight.x);

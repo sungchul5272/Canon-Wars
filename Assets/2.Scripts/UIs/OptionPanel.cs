@@ -62,7 +62,7 @@ public class OptionPanel : MonoBehaviour
 
     void OnEnable()
     {
-        InitResolutionOptions();
+        //InitResolutionOptions();
 
         _prevMasterVolume = PlayerPrefs.GetFloat("masterVolume", 0.7f);
         _prevBgmVolume = PlayerPrefs.GetFloat("bgmVolume", 0.7f);
@@ -77,23 +77,23 @@ public class OptionPanel : MonoBehaviour
         ApplyMixerVolumes();
     }
 
-    private void InitResolutionOptions()
-    {
-        _resolutions = Screen.resolutions;
-        resolutionDropdown.ClearOptions();
+    //private void InitResolutionOptions()
+    //{
+    //    _resolutions = Screen.resolutions;
+    //    resolutionDropdown.ClearOptions();
 
-        var options = new List<string>();
-        for (int i = 0; i < _resolutions.Length; i++)
-        {
-            string resStr = _resolutions[i].width + " x " + _resolutions[i].height;
-            options.Add(resStr);
+    //    var options = new List<string>();
+    //    for (int i = 0; i < _resolutions.Length; i++)
+    //    {
+    //        string resStr = _resolutions[i].width + " x " + _resolutions[i].height;
+    //        options.Add(resStr);
 
-            if (_resolutions[i].width == 1920 && _resolutions[i].height == 1080)
-                _defaultResolutionIndex = i;
-        }
+    //        if (_resolutions[i].width == 1920 && _resolutions[i].height == 1080)
+    //            _defaultResolutionIndex = i;
+    //    }
 
-        resolutionDropdown.AddOptions(options);
-    }
+    //    resolutionDropdown.AddOptions(options);
+    //}
 
     public void OnChangeResolution(int index)
     {
