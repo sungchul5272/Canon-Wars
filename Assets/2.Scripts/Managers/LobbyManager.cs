@@ -73,7 +73,7 @@ public class LobbyManager : MonoBehaviour
     float _maintainLobbyTime = 20;
     float _rateLimitTime = 1.1f;
     float _gameStartTimeout = 10;
-    float _backToLobbyTimeout = 10;
+    float _backToLobbyTimeout = 5;
 
     void Awake()
     {

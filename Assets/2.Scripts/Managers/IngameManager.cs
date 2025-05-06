@@ -100,7 +100,7 @@ public class IngameManager : NetworkBehaviour
         // 게임이 끝났을 땐 나가는 버튼이 있으므로 게임 도중만 처리
         if (!_isGameEnded)
         {
-            // 네트워크가 끊기면 메인화면으로
+            // 네트워크가 끊기면 로비 씬으로 복귀
             NetworkPlayerData.GameAborted();
             StartCoroutine(LeaveGameAsync());
         }
