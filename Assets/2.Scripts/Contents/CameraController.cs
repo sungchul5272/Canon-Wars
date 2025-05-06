@@ -117,6 +117,11 @@ public class CameraController : MonoBehaviour
     // 점진적으로 카메라 줌아웃 하는 메소드
     private void CameraZoomOut()
     {
+        if (!_cursorLock)
+        {
+            return;
+        }
+
         float mapMaxCamSize = _mapSize.x / _camera.aspect;
         float camMaxSize = Mathf.Min(_camMaxSize, mapMaxCamSize);
 
