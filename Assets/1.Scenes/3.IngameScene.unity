@@ -1258,7 +1258,7 @@ MonoBehaviour:
   _enemyWinRateText: {fileID: 1709304036}
   _mapBackgroundImage: {fileID: 1855695824}
   _mapSpawner: {fileID: 413969504}
-  _ingameUI: {fileID: 0}
+  _ingameUI: {fileID: 995862663}
 --- !u!4 &413969506
 Transform:
   m_ObjectHideFlags: 0
