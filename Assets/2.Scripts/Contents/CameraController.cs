@@ -117,11 +117,6 @@ public class CameraController : MonoBehaviour
     // 점진적으로 카메라 줌아웃 하는 메소드
     private void CameraZoomOut()
     {
-        if (!_cursorLock)
-        {
-            return;
-        }
-
         float mapMaxCamSize = _mapSize.x / _camera.aspect;
         float camMaxSize = Mathf.Min(_camMaxSize, mapMaxCamSize);
 
@@ -143,6 +138,11 @@ public class CameraController : MonoBehaviour
 
     private void MoveCameraAroundMap()
     {
+        if (!_cursorLock)
+        {
+            return;
+        }
+
         // 화면 내에서만 인식하도록
         if (Input.mousePosition.x < -1 || Input.mousePosition.x > Screen.width+1 ||
             Input.mousePosition.y < -1 || Input.mousePosition.y > Screen.height+1)
