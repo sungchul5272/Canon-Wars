@@ -172,14 +172,17 @@ public class CameraController : MonoBehaviour
         if (leftDis <= EDGE_THRESHOLD)
             moveDir += Vector3.left;
 
-        Vector3 movePos = _camMoveSpeed * Time.deltaTime * moveDir.normalized;
+        if (moveDir != Vector3.zero)
+        {
+            Vector3 movePos = _camMoveSpeed * Time.deltaTime * moveDir.normalized;
 
-        // 카메라 위치 갱신
-        float newPosX = Mathf.Clamp(transform.position.x + movePos.x, _mapBottomLeft.x, _mapTopRight.x);
-        float newPosY = Mathf.Clamp(transform.position.y + movePos.y, _mapBottomLeft.y, _mapTopRight.y);
+            // 카메라 위치 갱신
+            float newPosX = Mathf.Clamp(transform.position.x + movePos.x, _mapBottomLeft.x, _mapTopRight.x);
+            float newPosY = Mathf.Clamp(transform.position.y + movePos.y, _mapBottomLeft.y, _mapTopRight.y);
 
-        Vector3 newPos = new Vector3(newPosX, newPosY, _trans.position.z);
-        transform.position = newPos;
+            Vector3 newPos = new Vector3(newPosX, newPosY, _trans.position.z);
+            transform.position = newPos;
+        }
     }
 
     private void MapSizeCheck()
