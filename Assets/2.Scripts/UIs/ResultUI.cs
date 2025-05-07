@@ -19,7 +19,7 @@ public class ResultUI : MonoBehaviour
 
     Coroutine _waitHostCoroutine;
 
-    float _waitHostTimeout = 30;
+    float _waitHostTimeout = 20;
 
     void Awake()
     {

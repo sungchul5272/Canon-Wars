@@ -239,7 +239,7 @@ public class PlayerController : NetworkBehaviour
             HidePredictionsPoints();
 
             // 턴 종료
-            EndTurn();
+            IngameManager.Instance.PlayerTurnEndServerRpc();
         }
 
         // 포 각도 조절
@@ -444,11 +444,6 @@ public class PlayerController : NetworkBehaviour
     {
         _isCanFire = true;
         _isFire = false;
-    }
-
-    private void EndTurn()
-    {
-        IngameManager.Instance.PlayerTurnEndServerRpc();
     }
 
     private bool CheckDead()

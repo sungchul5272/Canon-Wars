@@ -118,7 +118,6 @@ public class GameInitializer : NetworkBehaviour
             AssignTurnNumbers();
             yield return WaitAllClientsAsync();
 
-            IngameManager.Instance.SetStartTurnIndex();
             IngameManager.Instance.StartGame();
         }
     }

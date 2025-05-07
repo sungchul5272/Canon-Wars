@@ -52,8 +52,9 @@ public class IngameManager : NetworkBehaviour
 
         _netTurnTimer.Value -= Time.deltaTime;
 
-        if (_netTurnTimer.Value <= 0f)
+        if (_netTurnTimer.Value <= 0)
         {
+            Debug.Log("제한 시간 종료.");
             PlayerTurnEndServerRpc();
         }
     }
@@ -108,6 +109,7 @@ public class IngameManager : NetworkBehaviour
 
     public void StartGame()
     {
+        SetStartTurnIndex();
         GetRandomWindForce();
         _netTurnTimer.Value = _turnTime;
         _isGameStarted = true;
@@ -175,7 +177,7 @@ public class IngameManager : NetworkBehaviour
 
         if (!_isGameStarted)
         {
-            Debug.Log("게임 종료됨 턴이동 금지");
+            Debug.Log("게임 종료됨 턴 이동 금지");
             yield break;
         }
 
@@ -186,7 +188,7 @@ public class IngameManager : NetworkBehaviour
         MoveTurn();
     }
 
-    private void MoveTurn()
+    void MoveTurn()
     {
         Debug.Log("턴 이동.");
         _netTurnTimer.Value = _turnTime;
@@ -198,7 +200,6 @@ public class IngameManager : NetworkBehaviour
         Debug.Log("시작 턴 결정.");
         int startTurn = UnityEngine.Random.Range(0, NetworkPlayerData.GetMaxPlayer());
         _netTurnIndex.Value = startTurn;
-
         _netTurnTimer.Value = _turnTime;
         _isGameStarted = true;
     }
@@ -224,13 +225,13 @@ public class IngameManager : NetworkBehaviour
     [ClientRpc]
     public void FindCurrentTurnPlayerClientRpc(int turnIndex)
     {
-        Debug.Log("현재 턴의 플레이어 탐색.");
-
         if (CheckGameEndCondition())
         {
             Debug.Log("게임 종료");
             return;
         }
+
+        Debug.Log("현재 턴의 플레이어 탐색.");
 
         var connectedClients = NetworkManager.Singleton.ConnectedClients;
         int counter = 0;
@@ -300,7 +301,7 @@ public class IngameManager : NetworkBehaviour
     bool CheckGameEndCondition()
     {
         // 최소한 게임이 시작됐다는것을 확인하고 나서 종료조건 확인
-        if (_isGameStarted == false)
+        if (!_isGameStarted)
             return false;
 
         var alivePlayers = new List<NetworkObject>();
@@ -334,7 +335,6 @@ public class IngameManager : NetworkBehaviour
     void EndGame(ulong? winnerClientId)
     {
         NotifyGameEndClientRpc(winnerClientId.HasValue ? winnerClientId.Value : ulong.MaxValue);
-
         _isGameStarted = false;
     }
 

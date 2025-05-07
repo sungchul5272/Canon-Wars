@@ -120,9 +120,10 @@ public class MainLobbyUI : MonoBehaviour
     {
         readyToggle.isOn = false;
         playerScrollView.gameObject.SetActive(false);
-        playButton.gameObject.SetActive(true);
         sessionEndedUI.SetActive(false);
         kickedUI.SetActive(false);
+        playButton.gameObject.SetActive(true);
+        playButton.interactable = false;
 
         // 슬롯 전부 비활성화
         for (int i = 0; i < _playerSlots.Count; i++)
