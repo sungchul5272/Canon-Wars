@@ -1108,7 +1108,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  _turnTime: 10
+  _turnTime: 20
   _windForceMax: 10
   _resultUI: {fileID: 1217608577}
 --- !u!4 &290170686

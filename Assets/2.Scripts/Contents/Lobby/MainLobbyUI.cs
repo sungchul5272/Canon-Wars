@@ -246,6 +246,7 @@ public class MainLobbyUI : MonoBehaviour
         lobbyCodeText.SetText(lobbyCode);
         playButton.gameObject.SetActive(instance.IsLobbyHost);
         readyToggle.gameObject.SetActive(!instance.IsLobbyHost);
+        mapChangeButton.gameObject.SetActive(instance.IsLobbyHost);
         leftMapButton.gameObject.SetActive(false);
         rightMapButton.gameObject.SetActive(instance.IsLobbyHost);
     }
