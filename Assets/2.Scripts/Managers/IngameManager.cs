@@ -51,12 +51,16 @@ public class IngameManager : NetworkBehaviour
         }
 
         _netTurnTimer.Value -= Time.deltaTime;
-
-        if (_netTurnTimer.Value <= 0)
+        if (IsTurnTimerEnd())
         {
             Debug.Log("제한 시간 종료.");
-            PlayerTurnEndServerRpc();
+            StartCoroutine(ForceTurnEndAsync());
         }
+    }
+
+    public bool IsTurnTimerEnd()
+    {
+        return _netTurnTimer.Value < 0;
     }
 
     public override void OnNetworkSpawn()
@@ -105,6 +109,19 @@ public class IngameManager : NetworkBehaviour
             NetworkPlayerData.GameAborted();
             StartCoroutine(LeaveGameAsync());
         }
+    }
+
+    IEnumerator ForceTurnEndAsync()
+    {
+        // 종료 직전 포탄 발사를 대비해 잠시 대기
+        yield return new WaitForSeconds(1);
+
+        if (_isTurnWait)
+        {
+            yield break;
+        }
+
+        PlayerTurnEndServerRpc();
     }
 
     public void StartGame()
@@ -160,9 +177,13 @@ public class IngameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void PlayerTurnEndServerRpc()
     {
+        if (_isTurnWait)
+        {
+            return;
+        }
+
         Debug.Log("턴 종료.");
-        _isTurnWait = true;
-        
+        _isTurnWait = true;      
         StartCoroutine(StartNextPlayerTurn());
     }
 

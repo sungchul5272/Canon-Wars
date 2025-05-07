@@ -201,7 +201,8 @@ public class PlayerController : NetworkBehaviour
         }
 
         // 내 턴이고 포탄을 쏠 수 있을 때에만 움직임
-        if (!IngameManager.Instance.IsMyTurn() || !_isCanFire)
+        IngameManager instance = IngameManager.Instance;
+        if (!instance.IsMyTurn() || instance.IsTurnTimerEnd() || !_isCanFire)
         {
             return;
         }
