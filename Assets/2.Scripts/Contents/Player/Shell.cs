@@ -47,7 +47,17 @@ public class Shell : NetworkBehaviour
         {
             if (changeValue == true && IngameManager.Instance.CurShellTrans != null)
             {
-                IngameManager.Instance.CurShellTrans = null;
+                Shell shell = IngameManager.Instance.CurShellTrans.GetComponent<Shell>();
+
+                if (shell != null)
+                {
+                    if (shell == this)
+                        IngameManager.Instance.CurShellTrans = null;
+                }
+                else
+                {
+                    IngameManager.Instance.CurShellTrans = null;
+                }
             }
         };
     }
@@ -200,7 +210,18 @@ public class Shell : NetworkBehaviour
     protected void ReleaseShell()
     {
         // 카메라가 더이상 포탄을 안따라가도록
-        IngameManager.Instance.CurShellTrans = null;
+        Shell shell = IngameManager.Instance.CurShellTrans.GetComponent<Shell>();
+
+        if (shell != null)
+        {
+            if(shell == this)
+              IngameManager.Instance.CurShellTrans = null;
+        }
+        else
+        {
+            IngameManager.Instance.CurShellTrans = null;
+        }
+
 
         // 클라이언트쪽에서도 해제시키도록
         if(IsServer)

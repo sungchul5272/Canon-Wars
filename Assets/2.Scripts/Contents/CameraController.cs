@@ -88,7 +88,6 @@ public class CameraController : MonoBehaviour
         {
             if (IngameManager.Instance.CurShellTrans != null)
             {
-                CameraZoomOut();
                 // Æ÷Åº Æ÷Ä¿½Ì
                 _curShellTrans = IngameManager.Instance.CurShellTrans;
 
@@ -98,6 +97,8 @@ public class CameraController : MonoBehaviour
 
                 Vector3 newPos = new Vector3(_newPosX, _newPosY, _trans.position.z);
                 _trans.position = newPos;
+              
+                CameraZoomOut();
             }
             else
             {
