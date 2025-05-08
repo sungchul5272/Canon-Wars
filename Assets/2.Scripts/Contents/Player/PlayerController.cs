@@ -335,17 +335,20 @@ public class PlayerController : NetworkBehaviour
         }
         // 인덱스 가져오기
         int selectedShellIndex = IngameManager.Instance.GetSelectShellIndex();
+
         // 포탄 풀링
         _curSpawnedShell = NetworkObjectPool.Instance.CreateNetObj(_shellList[selectedShellIndex].GetComponent<NetworkObject>());
+        
         // 포탄 위치와 회전
-        GameObject shellGameObj = _curSpawnedShell.gameObject;
-        shellGameObj.transform.position = _shellFireTrans.position;
-        shellGameObj.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
+        _curSpawnedShell.transform.position = _shellFireTrans.position;
+        _curSpawnedShell.transform.rotation = Quaternion.Euler(0, 0, _artilleryTrans.eulerAngles.z);
+
+        Debug.Log($"Shell Fire Parent Parent Name : {_shellFireTrans.parent.parent.name}");
 
         // 포탄 방향 
         Vector3 newScale = _curSpawnedShell.transform.localScale;
         newScale.x = Mathf.Abs(newScale.x) * Mathf.Sign(transform.localScale.x); // 좌우 반전
-        shellGameObj.transform.localScale = newScale;
+        _curSpawnedShell.transform.localScale = newScale;
 
         // 포탄 초기화
         Shell shell = _curSpawnedShell.GetComponent<Shell>();
@@ -378,7 +381,9 @@ public class PlayerController : NetworkBehaviour
         {
             // 포탄 위치 정보 건네주기
             IngameManager.Instance.CurShellTrans = netObj.transform;
-
+            Debug.Log($"PlayerController Shell Pos : {netObj.transform.position}");
+ 
+            // 포탄 포커싱
             _camController.StartCameraFocusingAndZoomOut();
         }
     }

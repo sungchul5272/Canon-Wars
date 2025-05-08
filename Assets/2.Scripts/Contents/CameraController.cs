@@ -118,6 +118,8 @@ public class CameraController : MonoBehaviour
 
     private IEnumerator CorCameraFocusingAndZoomOut()
     {
+        yield return new WaitForSeconds(0.1f);
+
         float mapMaxCamSize = _mapSize.x / _camera.aspect;
         float camMaxSize = Mathf.Min(_camMaxSize, mapMaxCamSize);
         float camCurSize = 0f;
@@ -141,7 +143,7 @@ public class CameraController : MonoBehaviour
             float progress = _zoomTime / _camZoomOutTime;
            
             camCurSize = Mathf.Lerp(_camSizeOriginHeight, camMaxSize, progress * progress);
-            _camera.orthographicSize = camCurSize - 0.1f;   // 외곽을 좀더 벗어나는 경우가 있어서 -0.1f 처리
+            _camera.orthographicSize = camCurSize;   // 외곽을 좀더 벗어나는 경우가 있어서 -0.5f 처리
 
             yield return null;
         }
@@ -164,6 +166,8 @@ public class CameraController : MonoBehaviour
 
         Vector3 newPos = new Vector3(_newPosX, _newPosY, _trans.position.z);
         _trans.position = newPos;
+
+        Debug.Log($"Camera Transform : {newPos}");
     }
 
     private void MoveCameraAroundMap()
@@ -225,7 +229,14 @@ public class CameraController : MonoBehaviour
         _camSizeHegiht = _camera.orthographicSize;
         _camSizeWidth = _camSizeHegiht * _camera.aspect;
 
-        _mapBottomLeft = new Vector2(-_mapSize.x + _camSizeWidth, -_mapSize.y+ _camSizeHegiht);
-        _mapTopRight = new Vector2(_mapSize.x - _camSizeWidth, _mapSize.y - _camSizeHegiht);
+        float threshhold = 0.1f;
+
+        _mapBottomLeft = new Vector2(-_mapSize.x + _camSizeWidth + threshhold, -_mapSize.y+ _camSizeHegiht + threshhold);
+        _mapTopRight = new Vector2(_mapSize.x - _camSizeWidth - threshhold, _mapSize.y - _camSizeHegiht - threshhold);
+    }
+
+    public (Vector2 bottomLeft, Vector2 topRight) GetMapBoundPos()
+    {
+        return (_mapBottomLeft, _mapTopRight); 
     }
 }
