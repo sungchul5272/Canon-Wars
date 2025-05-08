@@ -16,6 +16,9 @@ public class IngameUIController : MonoBehaviour
     [SerializeField] private GameObject _firstMissile;
     [SerializeField] private GameObject _secondMissile;
 
+    string _opponentTurn = "상대턴";
+    string _timerEnd = "시간 초과";
+
     public void Init()
     {
         if (Instance == null)
@@ -79,12 +82,13 @@ public class IngameUIController : MonoBehaviour
 
         if (IngameManager.Instance.IsMyTurn())
         {
-            int time = Mathf.CeilToInt(IngameManager.Instance.GetTurnTime());
-            _ingameTimer.text = time.ToString();
+            float turnTime = IngameManager.Instance.GetTurnTime();
+            int intTurnTime = Mathf.FloorToInt(turnTime);
+            _ingameTimer.text = (turnTime < 0) ? _timerEnd : intTurnTime.ToString();
         }
         else
         {
-            _ingameTimer.text = "상대턴";
+            _ingameTimer.text = _opponentTurn;
         }
     }
 }

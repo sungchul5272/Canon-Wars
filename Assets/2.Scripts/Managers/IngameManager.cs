@@ -408,7 +408,7 @@ public class IngameManager : NetworkBehaviour
 
     public float GetTurnTime()
     {
-        return Mathf.Max(0, _netTurnTimer.Value);
+        return _netTurnTimer.Value;
     }
 
     // 클라이언트가 선택한 포탄 인덱스를 서버에 전송하는 메소드

@@ -200,6 +200,12 @@ public class PlayerController : NetworkBehaviour
             }
         }
 
+        // 예측 지점 보여주기
+        if (_isFire == false)
+        {
+            ShowPredictionPoints(0.1f);
+        }
+
         // 내 턴이고 포탄을 쏠 수 있을 때에만 움직임
         IngameManager instance = IngameManager.Instance;
         if (!instance.IsMyTurn() || instance.IsTurnTimerEnd() || !_isCanFire)
@@ -255,12 +261,6 @@ public class PlayerController : NetworkBehaviour
         float newZ = Mathf.Clamp(currentZ + _dirY * Time.deltaTime * _artilleryRotateSpeed, _minAngleArtillery, _maxAngleArtillery);
         Quaternion quaternion = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.eulerAngles.y, newZ);
         _artilleryTrans.localRotation = Quaternion.Lerp(_artilleryTrans.localRotation, quaternion, Time.deltaTime * 10);
-
-        // 예측 지점 보여주기
-        if (_isFire == false)
-        {
-            ShowPredictionPoints(0.1f);
-        }
 
         if (_isGround)
         {
@@ -545,12 +545,12 @@ public class PlayerController : NetworkBehaviour
     private void ShowPredictionPoints(float time)
     {
         // 내 탱크와 내 턴이 아니라면 안 보여줌
-        if (!IngameManager.Instance.IsMyTurn() || !IsOwner)
+        if (!IngameManager.Instance.IsMyTurn() || !IsOwner || _predictionPoints == null)
         {
             return;
         }
 
-        for (int i = 0; i < _predictionPointNum; i++)
+        for (int i = 0; i < _predictionPoints.Length; i++)
         {
             _predictionPoints[i].transform.position = PredictionPointsPos(i * time);
             _predictionPoints[i].SetActive(true);
@@ -569,9 +569,12 @@ public class PlayerController : NetworkBehaviour
     private Vector2 PredictionPointsPos(float time)
     {
         Vector2 pos = Vector2.zero;
+        if (_shellList == null || _shellList.Count == 0)
+        {
+            return pos;
+        }
 
         float fireAngle = _artilleryTrans.eulerAngles.z * Mathf.Deg2Rad;
-
         if (transform.localScale.x < 0)
         {
             fireAngle = Mathf.PI - fireAngle;
