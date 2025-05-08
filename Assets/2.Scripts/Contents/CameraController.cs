@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -29,6 +31,9 @@ public class CameraController : MonoBehaviour
     private float _zoomTime = 0f;
     private bool _isInit = false;
     private bool _cursorLock = true;
+    private bool _isFocusingAndZoomOut = false;
+
+    private Coroutine _corCameraZoomOut = null;
 
     void Awake()
     {
@@ -42,19 +47,16 @@ public class CameraController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Confined;
     }
 
-    public void Init()//Action pCallback)
+    public void Init()
     {
         // 원래 카메라 크기 저장
         _camSizeOriginHeight = _camera.orthographicSize;
         _camSizeOriginWidth = _camSizeOriginHeight * _camera.aspect;
 
-        // 맵 정보 불러오기
-        MapSizeCheck();
+        // 카메라 가동 범위 확인
+        CheckCameraMovementRange();
 
         _isInit = true;
-
-        //if (pCallback != null)
-        //    pCallback.Invoke();
     }
 
     public void PlayerFocusing(PlayerController curPlayer)
@@ -74,37 +76,19 @@ public class CameraController : MonoBehaviour
     }
 
     // 원래 카메라 사이즈로 복구
-    private void RestoreCamSize()
+    public void RestoreCamSize()
     {
         _zoomTime = 0f;
         Camera.main.orthographicSize = _camSizeOriginHeight;
-        MapSizeCheck();
+        CheckCameraMovementRange();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (_isInit == true && GameInitializer.Instance != null)
+        if (_isInit == true && GameInitializer.Instance != null && !_isFocusingAndZoomOut)
         {
-            if (IngameManager.Instance.CurShellTrans != null)
-            {
-                // 포탄 포커싱
-                _curShellTrans = IngameManager.Instance.CurShellTrans;
-
-                // 카메라가 맵 범위 밖으로 안나가도록 제한
-                _newPosX = Mathf.Clamp(_curShellTrans.position.x, _mapBottomLeft.x, _mapTopRight.x);
-                _newPosY = Mathf.Clamp(_curShellTrans.position.y, _mapBottomLeft.y, _mapTopRight.y);
-
-                Vector3 newPos = new Vector3(_newPosX, _newPosY, _trans.position.z);
-                _trans.position = newPos;
-              
-                CameraZoomOut();
-            }
-            else
-            {
-                // 포탄을 쏘기 전까지는 화면 움직임 가능
-                MoveCameraAroundMap();
-            }
+            MoveCameraAroundMap();
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -116,25 +100,70 @@ public class CameraController : MonoBehaviour
     }
 
     // 점진적으로 카메라 줌아웃 하는 메소드
-    private void CameraZoomOut()
+    public void StartCameraFocusingAndZoomOut()
+    {
+        if (IngameManager.Instance == null || IngameManager.Instance.CurShellTrans == null)
+            return;
+
+        if (_corCameraZoomOut != null)
+        {
+            RestoreCamSize();
+            StopCoroutine(_corCameraZoomOut);
+        }
+
+        _isFocusingAndZoomOut = true;
+        _corCameraZoomOut = StartCoroutine(CorCameraFocusingAndZoomOut());
+    }
+
+
+    private IEnumerator CorCameraFocusingAndZoomOut()
     {
         float mapMaxCamSize = _mapSize.x / _camera.aspect;
         float camMaxSize = Mathf.Min(_camMaxSize, mapMaxCamSize);
+        float camCurSize = 0f;
+        Transform prevShellPos = null;
 
-        if (_zoomTime < _camZoomOutTime)
+        while (_zoomTime < _camZoomOutTime)
         {
+            // 포탄 포커싱
+            _curShellTrans = IngameManager.Instance.CurShellTrans;
+            prevShellPos = _curShellTrans;
+
+            if (_curShellTrans == null)
+                break;
+
+            // 카메라 포커싱
+            CameraFocusing(_curShellTrans);
+
+            //줌 아웃
             _zoomTime += Time.deltaTime;
-           
+
             float progress = _zoomTime / _camZoomOutTime;
+           
+            camCurSize = Mathf.Lerp(_camSizeOriginHeight, camMaxSize, progress * progress);
+            _camera.orthographicSize = camCurSize - 0.1f;   // 외곽을 좀더 벗어나는 경우가 있어서 -0.1f 처리
 
-            _camera.orthographicSize = Mathf.Lerp(_camSizeOriginHeight, camMaxSize, progress * progress);
-        }
-        else
-        {
-            _camera.orthographicSize = camMaxSize;
+            yield return null;
         }
 
-        MapSizeCheck();
+        CameraFocusing(prevShellPos);
+        _isFocusingAndZoomOut = false;
+    }
+
+    private void CameraFocusing(Transform shellTrans)
+    {
+        if (shellTrans == null)
+            return;
+
+        // 카메라 가동 범위 확인
+        CheckCameraMovementRange();
+
+        // 카메라가 맵 범위 밖으로 안나가도록 제한
+        _newPosX = Mathf.Clamp(shellTrans.position.x, _mapBottomLeft.x, _mapTopRight.x);
+        _newPosY = Mathf.Clamp(shellTrans.position.y, _mapBottomLeft.y, _mapTopRight.y);
+
+        Vector3 newPos = new Vector3(_newPosX, _newPosY, _trans.position.z);
+        _trans.position = newPos;
     }
 
     private void MoveCameraAroundMap()
@@ -185,7 +214,7 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    private void MapSizeCheck()
+    private void CheckCameraMovementRange()
     {
         _mapSize = GameInitializer.Instance.GetMapSize() * 0.5f;
 

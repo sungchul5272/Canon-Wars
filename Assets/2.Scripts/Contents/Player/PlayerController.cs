@@ -67,6 +67,7 @@ public class PlayerController : NetworkBehaviour
     private bool _isMoving = false;
 
     private Coroutine _corGenerateShell = null;
+    CameraController _camController = null;
 
     private NetworkObject _curSpawnedShell;
     public NetworkVariable<int> _hp = new(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -80,8 +81,9 @@ public class PlayerController : NetworkBehaviour
         _rb2D = GetComponent<Rigidbody2D>();
         _colider2D = GetComponent<CircleCollider2D>();
 
-        CameraController _camController = Camera.main.GetComponent<CameraController>();
+        _camController = Camera.main.GetComponent<CameraController>();
         _camController.Init();
+
         Debug.Log($"Camera Size : {Camera.main.orthographicSize}");
         Debug.Log("카메라 초기화 완료");
     }
@@ -377,11 +379,7 @@ public class PlayerController : NetworkBehaviour
             // 포탄 위치 정보 건네주기
             IngameManager.Instance.CurShellTrans = netObj.transform;
 
-            // 내 턴이면 발사한 포탄 저장
-            //if (IngameManager.Instance.IsMyTurn())
-            //{
-            //    _curShell = netObj.gameObject;
-            //}
+            _camController.StartCameraFocusingAndZoomOut();
         }
     }
 

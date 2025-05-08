@@ -49,12 +49,7 @@ public class Shell : NetworkBehaviour
             {
                 Shell shell = IngameManager.Instance.CurShellTrans.GetComponent<Shell>();
 
-                if (shell != null)
-                {
-                    if (shell == this)
-                        IngameManager.Instance.CurShellTrans = null;
-                }
-                else
+                if (shell != null && shell == this)
                 {
                     IngameManager.Instance.CurShellTrans = null;
                 }
@@ -214,12 +209,7 @@ public class Shell : NetworkBehaviour
         if (instance.CurShellTrans != null)
         {
             Shell shell = instance.CurShellTrans.GetComponent<Shell>();
-            if (shell != null)
-            {
-                if (shell == this)
-                    instance.CurShellTrans = null;
-            }
-            else
+            if (shell != null && shell == this)
             {
                 instance.CurShellTrans = null;
             }
