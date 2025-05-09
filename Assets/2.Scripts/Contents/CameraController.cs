@@ -166,8 +166,6 @@ public class CameraController : MonoBehaviour
 
         Vector3 newPos = new Vector3(_newPosX, _newPosY, _trans.position.z);
         _trans.position = newPos;
-
-        Debug.Log($"Camera Transform : {newPos}");
     }
 
     private void MoveCameraAroundMap()
